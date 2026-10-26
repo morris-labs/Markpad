@@ -22,7 +22,9 @@ as Markdown.
   copied into an `assets` folder next to the file.
 - **Source view**: Switch to the raw Markdown at any time.
 - **Find and replace**, an **outline** of the headings, and **spell check**.
-- **Export** to a standalone HTML page or a PDF.
+- **Print and export**: The **Print** and **Download as PDF** buttons at the
+  right end of the toolbar print the styled document or save it as a PDF.
+  You can also export to a standalone HTML page from **File > Export**.
 - **Copy as HTML**: To paste formatted text into an email, right-click and
   choose **Copy as HTML**. Without a selection, it copies the whole
   document. The copy uses inline styles and the light theme, and embeds
@@ -75,6 +77,7 @@ On macOS, use Cmd in place of Ctrl.
 | Link                 | Ctrl+K           |
 | Open a link          | Ctrl+click       |
 | Copy as HTML         | Ctrl+Shift+C     |
+| Print                | Ctrl+P           |
 | Find, replace        | Ctrl+F, Ctrl+H   |
 | Markdown source      | Ctrl+/           |
 | Outline              | Ctrl+Shift+O     |

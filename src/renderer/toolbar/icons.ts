@@ -25,6 +25,9 @@ const PATHS = {
   outline: '<path d="M4 5h16M8 10h12M8 15h12M4 20h16" />',
   find: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
   source: '<path d="M4 6h3M4 12h3M4 18h3M10 6l4 12"/><path d="M17 9l3 3-3 3"/>',
+  print:
+    '<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v6H7z"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
 } as const;
 
 export type IconName = keyof typeof PATHS;

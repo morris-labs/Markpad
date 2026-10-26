@@ -55,6 +55,9 @@ export function installBrowserStub(): void {
     exportDocument: async () => {
       throw new Error('Export is available in the desktop app.');
     },
+    printDocument: async () => {
+      throw new Error('Printing is available in the desktop app.');
+    },
     writeClipboard: async ({ html, text }) => {
       await navigator.clipboard.write([
         new ClipboardItem({

@@ -24,7 +24,7 @@ import {
   registerImageSchemePrivileges,
   type ImageImport,
 } from './images';
-import { exportHtml, exportPdf } from './exporter';
+import { exportHtml, exportPdf, printHtml } from './exporter';
 import { installMenu } from './menu';
 import { Settings } from './settings';
 
@@ -212,6 +212,7 @@ function registerIpc(): void {
     importImage(documentPath, image),
   );
 
+  ipcMain.handle('print:document', (_event, html: string) => printHtml(html));
   ipcMain.handle('clipboard:write', (_event, content: { html: string; text: string }) =>
     clipboard.write([new ClipboardItem({ 'text/html': content.html, 'text/plain': content.text })]),
   );

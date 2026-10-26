@@ -57,6 +57,7 @@ export function installMenu(
           label: 'Export',
           submenu: [action('HTML...', 'export-html'), action('PDF...', 'export-pdf')],
         },
+        action('Print...', 'print', 'CmdOrCtrl+P'),
         { type: 'separator' },
         action('Close tab', 'close-tab', 'CmdOrCtrl+W'),
         ...(isMac ? [] : [{ type: 'separator' } as const, { role: 'quit' } as const]),

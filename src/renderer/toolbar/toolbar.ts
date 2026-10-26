@@ -12,7 +12,8 @@ import { icon, type IconName } from './icons';
 import { Popover } from './popover';
 
 /** Commands that the toolbar can't run on the editor by itself. */
-export type ToolbarCommand = 'insert-image' | 'find' | 'toggle-outline' | 'toggle-source';
+export type ToolbarCommand =
+  'insert-image' | 'find' | 'toggle-outline' | 'toggle-source' | 'print' | 'export-pdf';
 
 /** The app services that the toolbar uses. */
 export interface ToolbarHost {
@@ -170,6 +171,21 @@ export class Toolbar {
       ),
       this.outlineButton,
       this.sourceButton,
+    );
+    group(
+      make(
+        {
+          icon: 'print',
+          label: 'Print',
+          shortcut: `${mod}+P`,
+          run: () => host.runCommand('print'),
+        },
+        false,
+      ),
+      make(
+        { icon: 'download', label: 'Download as PDF', run: () => host.runCommand('export-pdf') },
+        false,
+      ),
     );
     this.buildTablePicker();
   }

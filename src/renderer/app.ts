@@ -262,6 +262,8 @@ export class App implements TabHost {
         return;
       case 'copy-html':
         return tab ? this.copyAsHtml(tab) : undefined;
+      case 'print':
+        return tab ? this.printTab(tab) : undefined;
       case 'export-html':
       case 'export-pdf':
         return tab ? this.exportTab(tab, action === 'export-html' ? 'html' : 'pdf') : undefined;
@@ -278,6 +280,10 @@ export class App implements TabHost {
         return this.runMenuAction('toggle-source');
       case 'insert-image':
         return this.insertImageFromDialog();
+      case 'print':
+        return this.runMenuAction('print');
+      case 'export-pdf':
+        return this.runMenuAction('export-pdf');
     }
   }
 
@@ -321,6 +327,18 @@ export class App implements TabHost {
       );
     } catch (error) {
       this.showError("Couldn't copy as HTML", error);
+    }
+  }
+
+  private async printTab(tab: DocumentTab): Promise<void> {
+    // Printing renders the styled view, so leave source mode first.
+    if (tab.isSourceMode) await this.runMenuAction('toggle-source');
+    try {
+      const html = await buildExportHtml(tab.document.editor.view.dom, tab.title);
+      if (await window.markpad.printDocument(html))
+        this.setStatus(`Sent ${tab.title} to the printer`);
+    } catch (error) {
+      this.showError(`Couldn't print ${tab.title}`, error);
     }
   }
 

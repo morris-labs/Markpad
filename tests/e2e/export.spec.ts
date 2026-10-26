@@ -64,3 +64,42 @@ test('the outline lists headings and jumps to one', async () => {
   await expect(items.nth(1)).toHaveClass(/current/);
   await closeApp(app);
 });
+
+test('the toolbar Download as PDF button exports a PDF', async () => {
+  const ws = createWorkspace();
+  const file = ws.write('memo.md', '# Memo\n\nText.\n');
+  const { app, page } = await launchApp(ws, [file]);
+  const out = join(ws.docs, 'memo.pdf');
+  await stubSaveDialog(app, out);
+  await page.getByRole('button', { name: /Download as PDF/ }).click();
+  await expect(page.locator('.status-path')).toHaveText(`Exported to ${out}`, { timeout: 15_000 });
+  expect(readFileSync(out).subarray(0, 5).toString()).toBe('%PDF-');
+  await closeApp(app);
+});
+
+test('the toolbar Print button prints the styled document', async () => {
+  const ws = createWorkspace();
+  const file = ws.write('memo.md', '# Memo\n\n**Bold** text.\n');
+  const { app, page } = await launchApp(ws, [file]);
+  // Replaces the system print dialog with a stand-in that records the page.
+  await app.evaluate(({ BrowserWindow }) => {
+    const contents = BrowserWindow.getAllWindows()[0]?.webContents;
+    if (!contents) return;
+    const proto = Object.getPrototypeOf(contents) as {
+      print: (options: unknown, callback: (success: boolean, reason: string) => void) => void;
+    };
+    proto.print = function (this: Electron.WebContents, _options, callback) {
+      // The hidden print window runs no scripts, so read the page it loaded.
+      const fs = process.getBuiltinModule('node:fs');
+      const url = process.getBuiltinModule('node:url');
+      const printed = fs.readFileSync(url.fileURLToPath(this.getURL()), 'utf8');
+      (globalThis as { printed?: string }).printed = printed;
+      callback(true, '');
+    };
+  });
+  await page.getByRole('button', { name: /^Print/ }).click();
+  await expect(page.locator('.status-path')).toHaveText('Sent memo.md to the printer');
+  const printed = await app.evaluate(() => (globalThis as { printed?: string }).printed ?? '');
+  expect(printed).toContain('<strong>Bold</strong>');
+  await closeApp(app);
+});

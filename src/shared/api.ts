@@ -58,6 +58,7 @@ export type MenuAction =
   | 'toggle-source'
   | 'toggle-outline'
   | 'toggle-front-matter'
+  | 'print'
   | 'export-html'
   | 'export-pdf';
 
@@ -98,6 +99,12 @@ export interface MarkpadApi {
    * @returns The saved path, or null if the user canceled.
    */
   exportDocument(kind: 'html' | 'pdf', suggestedPath: string, html: string): Promise<string | null>;
+  /**
+   * Shows the system print dialog for an exported HTML page.
+   *
+   * @returns True if the page was sent to a printer; false if the user canceled.
+   */
+  printDocument(html: string): Promise<boolean>;
   /** Puts HTML on the clipboard, with plain text for programs that can't paste HTML. */
   writeClipboard(content: { readonly html: string; readonly text: string }): Promise<void>;
   /** Shows a file in the system file manager, without opening it. */
