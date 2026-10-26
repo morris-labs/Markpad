@@ -1,5 +1,6 @@
 import type { EditorState } from '@milkdown/kit/prose/state';
 import type { SessionTab } from '@shared/api';
+import { imagePlugin, refreshImages } from './editor/images';
 import { MarkdownDocument } from './editor/markdownDocument';
 
 const AUTOSAVE_DELAY_MS = 1000;
@@ -140,11 +141,25 @@ export class DocumentTab {
     await this.saving;
   }
 
+  /** Copies an image file into this document's assets folder and returns its relative path. */
+  async importImage(file: File): Promise<string> {
+    const api = window.markpad;
+    const path = api.getPathForFile(file);
+    if (path) return api.importImageFile(this.source.path, path);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return api.importImageBytes(this.source.path, {
+      name: file.name || 'pasted-image',
+      type: file.type,
+      bytes,
+    });
+  }
+
   /** Points the tab at a different file after Save As and records it as written. */
   retarget(source: TabSource, writtenText: string): void {
     this.source = source;
     this.savedText = writtenText;
     this.edited = false;
+    refreshImages(this.editorHost, source.path);
     this.host.onTabChanged(this);
   }
 
@@ -177,6 +192,12 @@ export class DocumentTab {
       text,
       onChange: () => this.markEdited(),
       onStateChange: (state) => this.host.onEditorState(this, state),
+      plugins: [
+        imagePlugin({
+          documentPath: () => this.source.path,
+          importFile: (file) => this.importImage(file),
+        }),
+      ],
     });
     this.frontMatterInput.value = this.documentValue.frontMatter ?? '';
     this.syncFrontMatterPanel();

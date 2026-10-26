@@ -30,6 +30,14 @@ export interface StartupState {
   readonly openPaths: readonly string[];
 }
 
+/** An image from the clipboard or a drop, without a file on disk. */
+export interface ImageBytes {
+  readonly name: string;
+  /** The MIME type, such as `image/png`. */
+  readonly type: string;
+  readonly bytes: Uint8Array;
+}
+
 export type ThemeSetting = 'system' | 'light' | 'dark';
 
 /** Commands that the application menu sends to the renderer. */
@@ -71,6 +79,15 @@ export interface MarkpadApi {
   /** Shows a save dialog and returns the chosen path, or null if canceled. */
   showSaveDialog(suggestedName: string): Promise<string | null>;
   ask(options: AskOptions): Promise<number>;
+
+  /** Shows an image picker and returns the chosen path, or null if canceled. */
+  showOpenImageDialog(): Promise<string | null>;
+  /** Copies an image file into the document's assets folder and returns its relative path. */
+  importImageFile(documentPath: string, imagePath: string): Promise<string>;
+  /** Saves image bytes into the document's assets folder and returns their relative path. */
+  importImageBytes(documentPath: string, image: ImageBytes): Promise<string>;
+  /** Gets the path of a file that the user dropped or pasted, or an empty string. */
+  getPathForFile(file: File): string;
 
   readFile(path: string): Promise<FileSnapshot>;
   /** Writes a file atomically and stops reporting that write as an outside change. */

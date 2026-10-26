@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { FileSnapshot, MarkpadApi, MenuAction } from '@shared/api';
 
 const api: MarkpadApi = {
@@ -10,6 +10,13 @@ const api: MarkpadApi = {
   showOpenDialog: () => ipcRenderer.invoke('dialog:open'),
   showSaveDialog: (suggestedName) => ipcRenderer.invoke('dialog:save', suggestedName),
   ask: (options) => ipcRenderer.invoke('dialog:ask', options),
+
+  showOpenImageDialog: () => ipcRenderer.invoke('dialog:openImage'),
+  importImageFile: (documentPath, imagePath) =>
+    ipcRenderer.invoke('image:importFile', documentPath, imagePath),
+  importImageBytes: (documentPath, image) =>
+    ipcRenderer.invoke('image:importBytes', documentPath, image),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 
   readFile: (path) => ipcRenderer.invoke('file:read', path),
   writeFile: (path, text) => ipcRenderer.invoke('file:write', path, text),

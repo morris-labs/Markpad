@@ -3,6 +3,7 @@ import { callCommand } from '@milkdown/kit/utils';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
+import { insertImageAtSelection } from './editor/images';
 import { ContextBar } from './toolbar/contextBar';
 import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
 import { DocumentTab, type TabHost, type TabSource } from './documentTab';
@@ -228,8 +229,22 @@ export class App implements TabHost {
       case 'toggle-source':
         return this.runMenuAction('toggle-source');
       case 'insert-image':
-        // Step 12 adds image import.
-        return;
+        return this.insertImageFromDialog();
+    }
+  }
+
+  private async insertImageFromDialog(): Promise<void> {
+    const tab = this.active;
+    if (!tab) return;
+    const api = window.markpad;
+    const path = await api.showOpenImageDialog();
+    if (!path) return;
+    try {
+      const src = await api.importImageFile(tab.source.path, path);
+      const alt = (path.split(/[\\/]/).pop() ?? '').replace(/\.[^.]+$/, '');
+      insertImageAtSelection(tab.document.editor.view, src, alt);
+    } catch (error) {
+      this.onSaveError(tab, error);
     }
   }
 

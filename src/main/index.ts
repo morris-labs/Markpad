@@ -1,9 +1,17 @@
 import { existsSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { basename, join, resolve } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
+import {
+  handleImageScheme,
+  IMAGE_EXTENSIONS,
+  importImage,
+  registerImageSchemePrivileges,
+  type ImageImport,
+} from './images';
 import { installMenu } from './menu';
 import { Settings } from './settings';
 
@@ -155,6 +163,22 @@ function registerIpc(): void {
     return result.response;
   });
 
+  ipcMain.handle('dialog:openImage', async () => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }],
+    });
+    return result.canceled ? null : (result.filePaths[0] ?? null);
+  });
+  ipcMain.handle('image:importFile', async (_event, documentPath: string, imagePath: string) => {
+    const bytes = await readFile(imagePath);
+    return importImage(documentPath, { name: basename(imagePath), type: '', bytes });
+  });
+  ipcMain.handle('image:importBytes', (_event, documentPath: string, image: ImageImport) =>
+    importImage(documentPath, image),
+  );
+
   ipcMain.handle('file:read', async (_event, path: string) => {
     const text = await readText(path);
     watcher.noteWrite(path, text);
@@ -199,9 +223,11 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   pendingOpenPaths.push(...filesFromArgs(process.argv, process.cwd()));
+  registerImageSchemePrivileges();
 
   void app.whenReady().then(async () => {
     await settings.load();
+    handleImageScheme();
     nativeTheme.themeSource = settings.theme;
     registerIpc();
     refreshMenu();

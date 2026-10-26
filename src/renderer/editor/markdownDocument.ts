@@ -1,3 +1,4 @@
+import type { MilkdownPlugin } from '@milkdown/kit/ctx';
 import type { EditorState } from '@milkdown/kit/prose/state';
 import { createEditor, type MarkdownEditor } from './createEditor';
 import { formatMarkdownFile, parseMarkdownFile, type MarkdownFile } from './markdownFile';
@@ -14,6 +15,8 @@ export interface OpenDocumentOptions {
   readonly onChange?: () => void;
   /** Called after any change to the editor state, including the selection. */
   readonly onStateChange?: (state: EditorState) => void;
+  /** Extra Milkdown plugins to load. */
+  readonly plugins?: readonly MilkdownPlugin[];
 }
 
 /** An editor bound to one Markdown file that writes the file back in its own style. */
@@ -50,6 +53,7 @@ export class MarkdownDocument {
       stringifyOptions: { ...style },
       ...(options.onChange ? { onChange: options.onChange } : {}),
       ...(options.onStateChange ? { onStateChange: options.onStateChange } : {}),
+      ...(options.plugins ? { plugins: options.plugins } : {}),
     });
     const preserver = new BlockPreserver(file.body, editor.canonicalize);
     return new MarkdownDocument(editor, file, preserver);

@@ -7,6 +7,7 @@ import {
   rootCtx,
   serializerCtx,
 } from '@milkdown/kit/core';
+import type { MilkdownPlugin } from '@milkdown/kit/ctx';
 import { clipboard } from '@milkdown/kit/plugin/clipboard';
 import { cursor } from '@milkdown/kit/plugin/cursor';
 import { history } from '@milkdown/kit/plugin/history';
@@ -30,6 +31,8 @@ export interface CreateEditorOptions {
   readonly onChange?: () => void;
   /** Called after the editor state changes in any way, including the selection. */
   readonly onStateChange?: (state: EditorState) => void;
+  /** Extra Milkdown plugins to load. */
+  readonly plugins?: readonly MilkdownPlugin[];
 }
 
 /** A mounted Markdown editor. */
@@ -76,6 +79,7 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
     .use(clipboard)
     .use(cursor)
     .use(prism)
+    .use([...(options.plugins ?? [])])
     .create();
 
   return {
