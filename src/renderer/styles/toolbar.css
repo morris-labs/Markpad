@@ -120,3 +120,70 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+#context-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+}
+
+#context-bar[hidden],
+.context-group[hidden] {
+  display: none;
+}
+
+.context-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.context-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 4px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.context-button {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.context-button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.context-button:disabled {
+  opacity: 0.4;
+}
+
+.context-button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.context-separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+.language-input {
+  width: 140px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  font-weight: normal;
+}

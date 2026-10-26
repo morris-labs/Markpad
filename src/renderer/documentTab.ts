@@ -82,6 +82,11 @@ export class DocumentTab {
     return tab;
   }
 
+  /** Checks whether the tab's editor has finished mounting. */
+  get isMounted(): boolean {
+    return this.documentValue !== null;
+  }
+
   get document(): MarkdownDocument {
     if (!this.documentValue) throw new Error('The tab has no mounted document.');
     return this.documentValue;

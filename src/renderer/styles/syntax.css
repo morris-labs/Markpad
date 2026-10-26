@@ -1,0 +1,75 @@
+/* Syntax highlighting colors for Prism tokens in code blocks. */
+:root {
+  --syntax-comment: #6a737d;
+  --syntax-keyword: #cf222e;
+  --syntax-string: #0a3069;
+  --syntax-number: #0550ae;
+  --syntax-function: #8250df;
+  --syntax-tag: #116329;
+  --syntax-attr: #953800;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --syntax-comment: #8b949e;
+    --syntax-keyword: #ff7b72;
+    --syntax-string: #a5d6ff;
+    --syntax-number: #79c0ff;
+    --syntax-function: #d2a8ff;
+    --syntax-tag: #7ee787;
+    --syntax-attr: #ffa657;
+  }
+}
+
+.ProseMirror pre .token.comment,
+.ProseMirror pre .token.prolog,
+.ProseMirror pre .token.doctype,
+.ProseMirror pre .token.cdata {
+  color: var(--syntax-comment);
+  font-style: italic;
+}
+
+.ProseMirror pre .token.keyword,
+.ProseMirror pre .token.important,
+.ProseMirror pre .token.atrule,
+.ProseMirror pre .token.rule {
+  color: var(--syntax-keyword);
+}
+
+.ProseMirror pre .token.string,
+.ProseMirror pre .token.char,
+.ProseMirror pre .token.regex,
+.ProseMirror pre .token.url,
+.ProseMirror pre .token.inserted {
+  color: var(--syntax-string);
+}
+
+.ProseMirror pre .token.number,
+.ProseMirror pre .token.boolean,
+.ProseMirror pre .token.constant,
+.ProseMirror pre .token.symbol,
+.ProseMirror pre .token.property {
+  color: var(--syntax-number);
+}
+
+.ProseMirror pre .token.function,
+.ProseMirror pre .token.class-name,
+.ProseMirror pre .token.builtin {
+  color: var(--syntax-function);
+}
+
+.ProseMirror pre .token.tag,
+.ProseMirror pre .token.selector {
+  color: var(--syntax-tag);
+}
+
+.ProseMirror pre .token.attr-name,
+.ProseMirror pre .token.variable,
+.ProseMirror pre .token.deleted {
+  color: var(--syntax-attr);
+}
+
+.ProseMirror pre .token.punctuation,
+.ProseMirror pre .token.operator {
+  color: var(--text-muted);
+}

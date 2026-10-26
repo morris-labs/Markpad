@@ -1,6 +1,7 @@
 import {
   defaultValueCtx,
   Editor,
+  editorViewCtx,
   parserCtx,
   remarkStringifyOptionsCtx,
   rootCtx,
@@ -9,9 +10,11 @@ import {
 import { clipboard } from '@milkdown/kit/plugin/clipboard';
 import { cursor } from '@milkdown/kit/plugin/cursor';
 import { history } from '@milkdown/kit/plugin/history';
+import { prism } from '@milkdown/plugin-prism';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
 import { Plugin, type EditorState } from '@milkdown/kit/prose/state';
+import type { EditorView } from '@milkdown/kit/prose/view';
 import { $prose, getMarkdown } from '@milkdown/kit/utils';
 import { taskCheckbox } from './taskList';
 
@@ -32,6 +35,7 @@ export interface CreateEditorOptions {
 /** A mounted Markdown editor. */
 export interface MarkdownEditor {
   readonly editor: Editor;
+  readonly view: EditorView;
   /** Gets the document serialized as Markdown. */
   getMarkdown(): string;
   /** Parses and re-serializes Markdown the way the editor would, without changing the document. */
@@ -71,10 +75,12 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
     .use(taskCheckbox)
     .use(clipboard)
     .use(cursor)
+    .use(prism)
     .create();
 
   return {
     editor,
+    view: editor.action((ctx) => ctx.get(editorViewCtx)),
     getMarkdown: () => editor.action(getMarkdown()),
     canonicalize: (markdown) =>
       editor.action((ctx) => ctx.get(serializerCtx)(ctx.get(parserCtx)(markdown))),
