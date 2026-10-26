@@ -23,6 +23,11 @@ if hash update-mime-database 2>/dev/null; then
     update-mime-database /usr/share/mime || true
 fi
 
+# Refresh the icon cache, so menus show the Markpad icon right away.
+if hash gtk-update-icon-cache 2>/dev/null; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+fi
+
 if hash update-desktop-database 2>/dev/null; then
     update-desktop-database /usr/share/applications || true
 fi

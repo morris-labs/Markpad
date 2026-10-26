@@ -22,11 +22,11 @@ fileAssociations:
 linux:
   target: [AppImage, deb]
   category: Office
-  icon: icon-1024.png
+  # A folder of NxN.png files installs one icon per size in the hicolor theme.
+  icon: icons
   executableName: markpad
   syncDesktopName: true
   synopsis: A lightweight WYSIWYG Markdown editor
-  mimeTypes: [text/markdown]
   desktop:
     entry:
       StartupWMClass: Markpad
@@ -36,7 +36,7 @@ deb:
   depends: [libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0]
 win:
   target: [nsis]
-  icon: icon-1024.png
+  icon: icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -44,5 +44,5 @@ nsis:
 mac:
   target: [dmg]
   category: public.app-category.productivity
-  icon: icon-1024.png
+  icon: icon.icns
   identity: null

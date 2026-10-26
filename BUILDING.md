@@ -109,3 +109,22 @@ script with the app's path filled in.
 Each installer registers Markpad as an editor for `.md`, `.markdown`,
 `.mdown`, and `.mkd` files. It doesn't make Markpad the default app. To
 make it the default, use your operating system's **Open with** setting.
+
+## App icon
+
+The `resources/icon.svg` file is the source of the app icon. The
+`scripts/build-icons.sh` script generates the files that the installers
+use, and those files are checked in:
+
+- `resources/icons/`: a PNG file for each size, from 16x16 to 1024x1024.
+  The Linux packages install them in the hicolor icon theme.
+- `resources/icon.ico`: the Windows icon.
+- `resources/icon.icns`: the macOS icon.
+
+To change the icon, edit the `resources/icon.svg` file, then regenerate the
+icon files on Linux:
+
+```
+sudo apt-get install librsvg2-bin icoutils icnsutils
+scripts/build-icons.sh
+```
