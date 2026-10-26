@@ -1,7 +1,10 @@
 import { editorViewCtx } from '@milkdown/kit/core';
 import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
 import { callCommand } from '@milkdown/kit/utils';
+import type { EditorState } from '@milkdown/kit/prose/state';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
+import { getFormatState } from './editor/commands';
+import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
 import { DocumentTab, type TabHost, type TabSource } from './documentTab';
 
 /** Owns the tabs, the tab bar, and the status bar, and routes menu commands. */
@@ -9,11 +12,26 @@ export class App implements TabHost {
   private readonly tabs: DocumentTab[] = [];
   private active: DocumentTab | null = null;
 
+  private readonly toolbar: Toolbar;
+
   constructor(
+    toolbarElement: HTMLElement,
     private readonly tabBar: HTMLElement,
     private readonly documents: HTMLElement,
     private readonly statusBar: HTMLElement,
-  ) {}
+  ) {
+    this.toolbar = new Toolbar(toolbarElement, {
+      getEditor: () => this.active?.document.editor.editor ?? null,
+      runCommand: (command) => void this.runToolbarCommand(command),
+    });
+    document.addEventListener('keydown', (event) => {
+      const modifier = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
+      if (modifier && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        this.toolbar.openLinkEditor();
+      }
+    });
+  }
 
   get activeTab(): DocumentTab | null {
     return this.active;
@@ -35,6 +53,10 @@ export class App implements TabHost {
     if (restoredActive) this.activate(restoredActive);
     await this.openPaths(openPaths);
     if (this.tabs.length === 0) await this.newDraft();
+  }
+
+  onEditorState(tab: DocumentTab, state: EditorState): void {
+    if (tab === this.active) this.refreshToolbar(state);
   }
 
   onTabChanged(tab: DocumentTab): void {
@@ -146,7 +168,9 @@ export class App implements TabHost {
     tab.pane.classList.add('active');
     this.renderTabBar();
     this.renderChrome();
-    tab.document.editor.editor.action((ctx) => ctx.get(editorViewCtx).focus());
+    const view = tab.document.editor.editor.action((ctx) => ctx.get(editorViewCtx));
+    this.refreshToolbar(view.state);
+    view.focus();
     void this.saveSession();
   }
 
@@ -187,6 +211,24 @@ export class App implements TabHost {
         // Later plan steps add these features.
         return;
     }
+  }
+
+  private async runToolbarCommand(command: ToolbarCommand): Promise<void> {
+    switch (command) {
+      case 'find':
+        return this.runMenuAction('find');
+      case 'toggle-outline':
+        return this.runMenuAction('toggle-outline');
+      case 'toggle-source':
+        return this.runMenuAction('toggle-source');
+      case 'insert-image':
+        // Step 12 adds image import.
+        return;
+    }
+  }
+
+  private refreshToolbar(state: EditorState): void {
+    this.toolbar.refresh(getFormatState(state), { source: false, outline: false });
   }
 
   private cycleTabs(step: number): void {

@@ -1,3 +1,4 @@
+import type { EditorState } from '@milkdown/kit/prose/state';
 import { createEditor, type MarkdownEditor } from './createEditor';
 import { formatMarkdownFile, parseMarkdownFile, type MarkdownFile } from './markdownFile';
 import { DEFAULT_STYLE, detectStyle } from './markdownStyle';
@@ -11,6 +12,8 @@ export interface OpenDocumentOptions {
   readonly text: string;
   /** Called after each edit to the body. */
   readonly onChange?: () => void;
+  /** Called after any change to the editor state, including the selection. */
+  readonly onStateChange?: (state: EditorState) => void;
 }
 
 /** An editor bound to one Markdown file that writes the file back in its own style. */
@@ -46,6 +49,7 @@ export class MarkdownDocument {
       markdown: file.body,
       stringifyOptions: { ...style },
       ...(options.onChange ? { onChange: options.onChange } : {}),
+      ...(options.onStateChange ? { onStateChange: options.onStateChange } : {}),
     });
     const preserver = new BlockPreserver(file.body, editor.canonicalize);
     return new MarkdownDocument(editor, file, preserver);

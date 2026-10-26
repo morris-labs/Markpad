@@ -11,8 +11,9 @@ import { cursor } from '@milkdown/kit/plugin/cursor';
 import { history } from '@milkdown/kit/plugin/history';
 import { commonmark } from '@milkdown/kit/preset/commonmark';
 import { gfm } from '@milkdown/kit/preset/gfm';
-import { Plugin } from '@milkdown/kit/prose/state';
+import { Plugin, type EditorState } from '@milkdown/kit/prose/state';
 import { $prose, getMarkdown } from '@milkdown/kit/utils';
+import { taskCheckbox } from './taskList';
 
 /** Options for {@link createEditor}. */
 export interface CreateEditorOptions {
@@ -24,6 +25,8 @@ export interface CreateEditorOptions {
   readonly stringifyOptions?: Record<string, unknown>;
   /** Called synchronously after each transaction that changes the document. */
   readonly onChange?: () => void;
+  /** Called after the editor state changes in any way, including the selection. */
+  readonly onStateChange?: (state: EditorState) => void;
 }
 
 /** A mounted Markdown editor. */
@@ -42,11 +45,15 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
   const changeNotifier = $prose(
     () =>
       new Plugin({
-        view: () => ({
-          update: (view, previous) => {
-            if (!view.state.doc.eq(previous.doc)) options.onChange?.();
-          },
-        }),
+        view: (view) => {
+          options.onStateChange?.(view.state);
+          return {
+            update: (current, previous) => {
+              if (!current.state.doc.eq(previous.doc)) options.onChange?.();
+              options.onStateChange?.(current.state);
+            },
+          };
+        },
       }),
   );
   const editor = await Editor.make()
@@ -61,6 +68,7 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
     .use(gfm)
     .use(history)
     .use(changeNotifier)
+    .use(taskCheckbox)
     .use(clipboard)
     .use(cursor)
     .create();

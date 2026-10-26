@@ -1,0 +1,122 @@
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 4px;
+}
+
+.toolbar-group + .toolbar-group {
+  border-left: 1px solid var(--border);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--text);
+}
+
+.toolbar-button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.toolbar-button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+}
+
+.toolbar-button:disabled {
+  opacity: 0.35;
+}
+
+.toolbar-button:focus-visible,
+.style-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.style-select {
+  height: 30px;
+  min-width: 132px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.popover {
+  position: fixed;
+  z-index: 100;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.popover button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-alt);
+}
+
+.popover button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.link-popover {
+  display: flex;
+  gap: 6px;
+}
+
+.link-popover[hidden],
+.table-popover[hidden] {
+  display: none;
+}
+
+.link-popover input {
+  width: 300px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 18px);
+  gap: 3px;
+}
+
+.table-popover .table-grid button {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 3px;
+  background: var(--bg);
+}
+
+.table-popover .table-grid button.selected {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.table-size {
+  margin-top: 6px;
+  color: var(--text-muted);
+  text-align: center;
+}

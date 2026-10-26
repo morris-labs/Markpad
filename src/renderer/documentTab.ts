@@ -1,3 +1,4 @@
+import type { EditorState } from '@milkdown/kit/prose/state';
 import type { SessionTab } from '@shared/api';
 import { MarkdownDocument } from './editor/markdownDocument';
 
@@ -13,6 +14,8 @@ export interface TabHost {
   /** Called when the tab's title, unsaved state, or content changes. */
   readonly onTabChanged: (tab: DocumentTab) => void;
   readonly onSaveError: (tab: DocumentTab, error: unknown) => void;
+  /** Called when the editor's state changes, including the selection. */
+  readonly onEditorState: (tab: DocumentTab, state: EditorState) => void;
 }
 
 let nextTabId = 1;
@@ -168,6 +171,7 @@ export class DocumentTab {
       root: this.editorHost,
       text,
       onChange: () => this.markEdited(),
+      onStateChange: (state) => this.host.onEditorState(this, state),
     });
     this.frontMatterInput.value = this.documentValue.frontMatter ?? '';
     this.syncFrontMatterPanel();

@@ -1,6 +1,7 @@
 import { App } from './app';
 import './styles/app.css';
 import './styles/document.css';
+import './styles/toolbar.css';
 
 function requireElement(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -9,6 +10,7 @@ function requireElement(id: string): HTMLElement {
 }
 
 const app = new App(
+  requireElement('toolbar'),
   requireElement('tab-bar'),
   requireElement('documents'),
   requireElement('status-bar'),
