@@ -7,6 +7,8 @@ export interface MenuHandlers {
   readonly openRecent: (path: string) => void;
   readonly clearRecent: () => void;
   readonly setTheme: (theme: ThemeSetting) => void;
+  readonly installCommand: () => void;
+  readonly uninstallCommand: () => void;
 }
 
 /** Builds and installs the application menu. */
@@ -103,6 +105,14 @@ export function installMenu(
       ],
     },
     ...(isMac ? [{ role: 'windowMenu' } as MenuItemConstructorOptions] : []),
+    {
+      label: '&Help',
+      role: 'help',
+      submenu: [
+        { label: "Install 'mdv' command", click: handlers.installCommand },
+        { label: "Remove 'mdv' command", click: handlers.uninstallCommand },
+      ],
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }

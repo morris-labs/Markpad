@@ -9,6 +9,9 @@ files:
   - resources/icon.png
   - package.json
 asar: true
+extraResources:
+  - from: resources/bin
+    to: bin
 fileAssociations:
   - ext: [md, markdown, mdown, mkd]
     name: Markdown document
@@ -28,6 +31,8 @@ linux:
     entry:
       StartupWMClass: Markpad
 deb:
+  afterInstall: resources/linux/after-install.sh
+  afterRemove: resources/linux/after-remove.sh
   depends: [libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0]
 win:
   target: [nsis]

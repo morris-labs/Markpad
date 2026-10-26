@@ -128,7 +128,7 @@ export class App implements TabHost {
         continue;
       }
       try {
-        const file = await window.markpad.readFile(path);
+        const file = await window.markpad.readFile(path, true);
         // Replace a single untouched, empty draft, like a word processor does.
         const only = this.tabs.length === 1 ? this.tabs[0] : undefined;
         await this.addTab({ kind: 'file', path }, file.text);

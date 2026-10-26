@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { closeApp, createWorkspace, editor, launchApp, menu } from './app';
 
@@ -34,5 +35,19 @@ test('an outside change reloads a tab with no pending edits', async () => {
   await expect(editor(page).locator('h1')).toHaveText('Before');
   ws.write('watched.md', '# After\n');
   await expect(editor(page).locator('h1')).toHaveText('After');
+  await closeApp(app);
+});
+
+test('a missing file named on the command line opens empty and is created on first edit', async () => {
+  const ws = createWorkspace();
+  const path = `${ws.docs}/fresh.md`;
+  const { app, page } = await launchApp(ws, [path]);
+  await expect(page.locator('#tab-bar .tab-label')).toHaveText(['fresh.md']);
+  await page.waitForTimeout(1500);
+  expect(() => ws.read('fresh.md')).toThrow();
+  await editor(page).click();
+  await page.keyboard.type('Created');
+  // Polling stops on a thrown error, so read only once the file exists.
+  await expect.poll(() => (existsSync(path) ? ws.read('fresh.md') : null)).toBe('Created\n');
   await closeApp(app);
 });

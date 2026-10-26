@@ -27,6 +27,33 @@ as Markdown.
   document.
 - **Light and dark themes**: Follow the OS, or choose one in **View > Theme**.
 
+## Open files from a terminal
+
+The `mdv` command opens files in Markpad, the way `subl` does for Sublime
+Text. Each file opens as a tab in the running window, and the command
+returns to the prompt right away:
+
+```
+mdv notes.md docs/plan.md
+```
+
+A file that doesn't exist opens as an empty document, and Markpad creates
+it when you type. Run `mdv --help` for the options.
+
+To set up the command, do one of the following:
+
+- **Debian package**: Installing the `.deb` package adds `/usr/bin/mdv`.
+- **AppImage, macOS, or Windows**: Click **Help > Install 'mdv' command**.
+  - On Linux, the command goes in the `~/.local/bin` folder, which must be
+    on your PATH.
+  - On macOS, it goes in the `/usr/local/bin` folder; macOS asks for your
+    password.
+  - On Windows, it goes in `%LOCALAPPDATA%\Markpad\bin`, and Markpad adds
+    that folder to your user PATH. Open a new terminal to use it.
+
+To remove the command, click **Help > Remove 'mdv' command**, or uninstall
+the Debian package.
+
 ## Keyboard shortcuts
 
 On macOS, use Cmd in place of Ctrl.

@@ -22,7 +22,7 @@ const api: MarkpadApi = {
     ipcRenderer.invoke('export:save', kind, suggestedPath, html),
   showInFolder: (path) => ipcRenderer.invoke('shell:showInFolder', path),
 
-  readFile: (path) => ipcRenderer.invoke('file:read', path),
+  readFile: (path, allowMissing) => ipcRenderer.invoke('file:read', path, allowMissing),
   writeFile: (path, text) => ipcRenderer.invoke('file:write', path, text),
   watchFile: (path) => ipcRenderer.invoke('file:watch', path),
   unwatchFile: (path) => ipcRenderer.invoke('file:unwatch', path),

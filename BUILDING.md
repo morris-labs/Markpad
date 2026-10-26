@@ -81,14 +81,28 @@ The app isn't signed or notarized, so Gatekeeper blocks it on first launch.
 To open it anyway, follow these steps:
 
 1. Open the disk image and drag **Markpad** to the **Applications** folder.
-1. Open Markpad. macOS says that it can't verify the app.
-1. Click **System Settings > Privacy & Security**.
-1. In the **Security** section, click **Open Anyway** next to the Markpad
+2. Open Markpad. macOS says that it can't verify the app.
+3. Click **System Settings > Privacy & Security**.
+4. In the **Security** section, click **Open Anyway** next to the Markpad
    message.
 
 Signing and notarization need a paid Apple Developer account. With one, set
 the `identity` key in the `electron-builder.yml` file to your signing
 identity, and see the electron-builder documentation about notarization.
+
+## The mdv command
+
+The `resources/bin/mdv` file (POSIX shell) and the `resources/bin/mdv.cmd`
+file (Windows) ship in each package's `resources/bin` folder. The Debian
+package links `/usr/bin/mdv` to the shell script in its install script,
+`resources/linux/after-install.sh`, and removes the link in
+`resources/linux/after-remove.sh`. Both scripts are copies of the
+electron-builder templates with lines added at the end; when you update
+electron-builder, compare them with the templates in
+`node_modules/app-builder-lib/templates/linux/`.
+
+On other platforms, **Help > Install 'mdv' command** writes a copy of the
+script with the app's path filled in.
 
 ## File associations
 

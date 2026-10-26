@@ -2,6 +2,8 @@
 export interface FileSnapshot {
   readonly path: string;
   readonly text: string;
+  /** True if the file doesn't exist yet and opened as an empty document. */
+  readonly missing?: boolean;
 }
 
 /** An untitled document stored in the app's drafts folder. */
@@ -98,7 +100,13 @@ export interface MarkpadApi {
   /** Shows a file in the system file manager, without opening it. */
   showInFolder(path: string): Promise<void>;
 
-  readFile(path: string): Promise<FileSnapshot>;
+  /**
+   * Reads a file.
+   *
+   * @param allowMissing If true, a missing file returns empty text with
+   *     `missing` set; if false, it's an error. Default: false.
+   */
+  readFile(path: string, allowMissing?: boolean): Promise<FileSnapshot>;
   /** Writes a file atomically and stops reporting that write as an outside change. */
   writeFile(path: string, text: string): Promise<void>;
   watchFile(path: string): Promise<void>;

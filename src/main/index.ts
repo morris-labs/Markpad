@@ -1,9 +1,10 @@
-import { existsSync, statSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { basename, join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
 import icon from '../../resources/icon.png?asset';
+import { parseFileArgs } from './args';
+import { installCommand, uninstallCommand, type CommandResult } from './cliInstaller';
 import { installContextMenu } from './contextMenu';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
@@ -36,11 +37,7 @@ const watcher = new FileWatcher((path, text) => {
 
 /** Gets the existing files among command-line arguments. */
 function filesFromArgs(argv: readonly string[], cwd: string): string[] {
-  const args = argv.slice(app.isPackaged ? 1 : 2);
-  return args
-    .filter((arg) => !arg.startsWith('-') && arg !== '.')
-    .map((arg) => resolve(cwd, arg))
-    .filter((path) => existsSync(path) && statSync(path).isFile());
+  return parseFileArgs(argv.slice(app.isPackaged ? 1 : 2), cwd);
 }
 
 function requestOpen(paths: readonly string[]): void {
@@ -65,10 +62,30 @@ function refreshMenu(): void {
       openRecent: (path) => requestOpen([path]),
       clearRecent: () => void settings.clearRecent().then(refreshMenu),
       setTheme: (theme) => void applyTheme(theme),
+      installCommand: () => void reportCommandResult(installCommand),
+      uninstallCommand: () => void reportCommandResult(uninstallCommand),
     },
     settings.recent,
     settings.theme,
   );
+}
+
+/** Runs the mdv installer or remover and shows what happened. */
+async function reportCommandResult(action: () => Promise<CommandResult>): Promise<void> {
+  let result: CommandResult;
+  let type: 'info' | 'error' = 'info';
+  try {
+    result = await action();
+  } catch (error) {
+    type = 'error';
+    result = {
+      message: "Markpad couldn't change the 'mdv' command.",
+      detail: error instanceof Error ? error.message : String(error),
+    };
+  }
+  const options = { type, message: result.message, detail: result.detail, buttons: ['OK'] };
+  if (mainWindow) await dialog.showMessageBox(mainWindow, options);
+  else await dialog.showMessageBox(options);
 }
 
 async function applyTheme(theme: ThemeSetting): Promise<void> {
@@ -208,10 +225,17 @@ function registerIpc(): void {
     },
   );
 
-  ipcMain.handle('file:read', async (_event, path: string) => {
-    const text = await readText(path);
-    watcher.noteWrite(path, text);
-    return { path, text };
+  ipcMain.handle('file:read', async (_event, path: string, allowMissing = false) => {
+    try {
+      const text = await readText(path);
+      watcher.noteWrite(path, text);
+      return { path, text };
+    } catch (error) {
+      // A file named on the command line might not exist yet; it opens empty.
+      const missing = (error as NodeJS.ErrnoException).code === 'ENOENT';
+      if (allowMissing && missing) return { path, text: '', missing: true };
+      throw error;
+    }
   });
   ipcMain.handle('file:write', async (_event, path: string, text: string) => {
     watcher.noteWrite(path, text);
@@ -240,7 +264,14 @@ function registerIpc(): void {
   });
 }
 
-if (!app.requestSingleInstanceLock()) {
+// `markpad --version` prints the version for the mdv command, then exits.
+const versionRequested = process.argv
+  .slice(app.isPackaged ? 1 : 2)
+  .some((arg) => arg === '--version' || arg === '-v');
+if (versionRequested) {
+  process.stdout.write(`Markpad ${app.getVersion()}\n`);
+  app.exit(0);
+} else if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv, cwd) => requestOpen(filesFromArgs(argv, cwd)));
