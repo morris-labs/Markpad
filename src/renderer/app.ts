@@ -1,10 +1,10 @@
 import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
 import { callCommand } from '@milkdown/kit/utils';
-import type { EditorView } from '@milkdown/kit/prose/view';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
 import { insertImageAtSelection } from './editor/images';
 import { resolveLink } from './editor/links';
+import { FindBar } from './panels/findBar';
 import { LinkBubble } from './toolbar/linkBubble';
 import { ContextBar } from './toolbar/contextBar';
 import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
@@ -18,6 +18,7 @@ export class App implements TabHost {
   private readonly toolbar: Toolbar;
   private readonly contextBar: ContextBar;
   private readonly linkBubble: LinkBubble;
+  private readonly findBar: FindBar;
 
   constructor(
     toolbarElement: HTMLElement,
@@ -41,6 +42,7 @@ export class App implements TabHost {
       editLink: (anchor) => this.toolbar.openLinkEditor(anchor),
     });
     documents.addEventListener('scroll', () => this.linkBubble.hide(), true);
+    this.findBar = new FindBar(documents);
     const trackModifier = (event: KeyboardEvent): void => {
       const down = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
       document.body.classList.toggle('modifier-down', down);
@@ -80,7 +82,7 @@ export class App implements TabHost {
   }
 
   onEditorState(tab: DocumentTab): void {
-    if (tab === this.active && tab.isMounted) this.refreshToolbar(tab.document.editor.view);
+    if (tab === this.active) this.refreshActiveChrome();
   }
 
   onTabChanged(tab: DocumentTab): void {
@@ -135,7 +137,7 @@ export class App implements TabHost {
       tab.source.kind === 'file' ? tab.source.path : `${tab.title.replace(/[\\/:*?"<>|]/g, '')}.md`;
     const path = await api.showSaveDialog(suggested);
     if (!path) return;
-    const text = tab.document.toFileText();
+    const text = tab.currentText();
     const previous = tab.source;
     if (previous.kind === 'draft') {
       await api.promoteDraft(previous.id, path, text);
@@ -192,9 +194,9 @@ export class App implements TabHost {
     tab.pane.classList.add('active');
     this.renderTabBar();
     this.renderChrome();
-    const view = tab.document.editor.view;
-    this.refreshToolbar(view);
-    view.focus();
+    this.refreshActiveChrome();
+    if (tab.sourceEditor) tab.sourceEditor.focus();
+    else tab.document.editor.view.focus();
     void this.saveSession();
   }
 
@@ -218,17 +220,27 @@ export class App implements TabHost {
       case 'previous-tab':
         return this.cycleTabs(action === 'next-tab' ? 1 : -1);
       case 'undo':
-        tab?.document.editor.editor.action(callCommand(undoCommand.key));
+        if (tab?.sourceEditor) tab.sourceEditor.undo();
+        else tab?.document.editor.editor.action(callCommand(undoCommand.key));
         return;
       case 'redo':
-        tab?.document.editor.editor.action(callCommand(redoCommand.key));
+        if (tab?.sourceEditor) tab.sourceEditor.redo();
+        else tab?.document.editor.editor.action(callCommand(redoCommand.key));
+        return;
+      case 'toggle-source':
+        if (tab) {
+          await tab.toggleSourceMode();
+          this.refreshActiveChrome();
+        }
         return;
       case 'toggle-front-matter':
         tab?.toggleFrontMatter();
         return;
       case 'find':
       case 'replace':
-      case 'toggle-source':
+        if (tab?.sourceEditor) tab.sourceEditor.openSearch();
+        else if (tab) this.findBar.open(tab.document.editor.view, action === 'replace');
+        return;
       case 'toggle-outline':
       case 'export-html':
       case 'export-pdf':
@@ -291,10 +303,18 @@ export class App implements TabHost {
     }
   }
 
-  private refreshToolbar(view: EditorView): void {
-    this.toolbar.refresh(getFormatState(view.state), { source: false, outline: false });
+  /** Updates the toolbar, context bar, and link bubble for the active tab. */
+  private refreshActiveChrome(): void {
+    const tab = this.active;
+    const view = tab && tab.isMounted && !tab.isSourceMode ? tab.document.editor.view : null;
+    this.toolbar.refresh(view ? getFormatState(view.state) : null, {
+      source: tab?.isSourceMode ?? false,
+      outline: false,
+    });
     this.contextBar.refresh(view);
     this.linkBubble.refresh(view);
+    this.findBar.attach(view);
+    this.findBar.updateCount();
   }
 
   private cycleTabs(step: number): void {

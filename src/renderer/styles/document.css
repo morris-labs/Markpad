@@ -215,3 +215,63 @@
     padding: 32px 24px;
   }
 }
+
+.source-host {
+  max-width: 980px;
+  margin: 0 auto;
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.source-host[hidden] {
+  display: none;
+}
+
+.source-host .cm-editor {
+  min-height: calc(100vh - 220px);
+  font-size: 14px;
+}
+
+.source-host .cm-editor.cm-focused {
+  outline: none;
+}
+
+.source-host .cm-scroller {
+  font-family: var(--mono-font);
+  line-height: 1.6;
+}
+
+.source-host .cm-content {
+  padding: 24px 0;
+}
+
+.source-host .cm-gutters {
+  background: var(--surface-alt);
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.source-host .cm-activeLine {
+  background: var(--hover);
+}
+
+.source-host .cm-activeLineGutter {
+  background: var(--hover);
+}
+
+.source-host .cm-panels {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+.ProseMirror .search-match {
+  background: color-mix(in srgb, #ffd33d 45%, transparent);
+  border-radius: 2px;
+}
+
+.ProseMirror .search-match-current {
+  background: #ff9632;
+  color: #000;
+}

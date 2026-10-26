@@ -3,6 +3,7 @@ import type { SessionTab } from '@shared/api';
 import { imagePlugin, refreshImages } from './editor/images';
 import { linkClickPlugin } from './editor/linkClicks';
 import { MarkdownDocument } from './editor/markdownDocument';
+import { SourceEditor } from './sourceEditor';
 
 const AUTOSAVE_DELAY_MS = 1000;
 
@@ -45,6 +46,8 @@ export class DocumentTab {
   private readonly editorHost: HTMLElement;
 
   private documentValue: MarkdownDocument | null = null;
+  private sourceView: SourceEditor | null = null;
+  private readonly sourceHost: HTMLElement;
   /** The text on disk, as last read or written by this tab. */
   private savedText: string;
   /** True if the document has changed since it was last written. */
@@ -76,7 +79,10 @@ export class DocumentTab {
 
     this.editorHost = document.createElement('div');
     this.editorHost.className = 'editor-host';
-    this.pane.append(this.frontMatterPanel, this.editorHost);
+    this.sourceHost = document.createElement('div');
+    this.sourceHost.className = 'source-host';
+    this.sourceHost.hidden = true;
+    this.pane.append(this.frontMatterPanel, this.editorHost, this.sourceHost);
   }
 
   /** Creates a tab and mounts its editor. */
@@ -110,7 +116,49 @@ export class DocumentTab {
   }
 
   get isEmpty(): boolean {
-    return this.document.toFileText().trim() === '';
+    return this.currentText().trim() === '';
+  }
+
+  /** Checks whether the tab shows its raw Markdown source. */
+  get isSourceMode(): boolean {
+    return this.sourceView !== null;
+  }
+
+  /** Gets the source editor while the tab is in source mode. */
+  get sourceEditor(): SourceEditor | null {
+    return this.sourceView;
+  }
+
+  /** Gets the full file text from whichever view is showing. */
+  currentText(): string {
+    return this.sourceView ? this.sourceView.text : this.document.toFileText();
+  }
+
+  /**
+   * Switches between the styled view and the raw source.
+   *
+   * Leaving source mode parses the source into a new document, so the undo
+   * history starts over.
+   */
+  async toggleSourceMode(): Promise<void> {
+    if (this.sourceView) {
+      const text = this.sourceView.text;
+      this.sourceView.destroy();
+      this.sourceView = null;
+      this.sourceHost.hidden = true;
+      this.sourceHost.replaceChildren();
+      this.editorHost.hidden = false;
+      await this.remount(text);
+      this.document.editor.view.focus();
+    } else {
+      const text = this.document.toFileText();
+      this.editorHost.hidden = true;
+      this.frontMatterPanel.hidden = true;
+      this.sourceHost.hidden = false;
+      this.sourceView = new SourceEditor(this.sourceHost, text, () => this.markEdited());
+      this.sourceView.focus();
+    }
+    this.host.onTabChanged(this);
   }
 
   get sessionEntry(): SessionTab {
@@ -122,14 +170,23 @@ export class DocumentTab {
   /** Replaces the document with text from disk and clears any pending edit. */
   async reload(text: string): Promise<void> {
     clearTimeout(this.saveTimer);
-    this.edited = false;
     this.savedText = text;
+    if (this.sourceView) {
+      this.sourceView.setText(text);
+    } else {
+      await this.remount(text);
+    }
+    this.edited = false;
+    this.host.onTabChanged(this);
+  }
+
+  private async remount(text: string): Promise<void> {
     const scroll = this.pane.scrollTop;
     await this.documentValue?.destroy();
+    this.documentValue = null;
     this.editorHost.replaceChildren();
     await this.mount(text);
     this.pane.scrollTop = scroll;
-    this.host.onTabChanged(this);
   }
 
   /** Checks whether `text` differs from the last text this tab read or wrote. */
@@ -168,12 +225,14 @@ export class DocumentTab {
 
   async destroy(): Promise<void> {
     clearTimeout(this.saveTimer);
+    this.sourceView?.destroy();
     await this.documentValue?.destroy();
     this.pane.remove();
   }
 
   /** Shows or hides the front matter panel, creating empty front matter if needed. */
   toggleFrontMatter(): void {
+    if (this.sourceView) return;
     const doc = this.document;
     if (doc.frontMatter === null) {
       doc.frontMatter = '';
@@ -221,7 +280,7 @@ export class DocumentTab {
   private async writeIfEdited(): Promise<void> {
     if (!this.edited || !this.documentValue) return;
     this.edited = false;
-    const text = this.documentValue.toFileText();
+    const text = this.currentText();
     if (text !== this.savedText) {
       try {
         await window.markpad.writeFile(this.source.path, text);

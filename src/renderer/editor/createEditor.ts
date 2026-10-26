@@ -17,6 +17,7 @@ import { gfm } from '@milkdown/kit/preset/gfm';
 import { Plugin, type EditorState } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { $prose, getMarkdown } from '@milkdown/kit/utils';
+import { searchPlugin } from './search';
 import { taskCheckbox } from './taskList';
 
 /** Options for {@link createEditor}. */
@@ -76,6 +77,7 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
     .use(history)
     .use(changeNotifier)
     .use(taskCheckbox)
+    .use(searchPlugin)
     .use(clipboard)
     .use(cursor)
     .use(prism)

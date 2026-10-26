@@ -230,3 +230,68 @@
 body.modifier-down .ProseMirror a {
   cursor: pointer;
 }
+
+.find-bar {
+  position: absolute;
+  top: 8px;
+  right: 24px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.find-bar[hidden],
+.find-row[hidden] {
+  display: none;
+}
+
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.find-bar input {
+  width: 220px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+}
+
+.find-bar button {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+}
+
+.find-bar button:hover {
+  background: var(--hover);
+}
+
+.find-bar button.text-button {
+  border-color: var(--border);
+  background: var(--surface-alt);
+}
+
+.find-bar button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.find-count {
+  min-width: 70px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
