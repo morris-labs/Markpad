@@ -2,6 +2,7 @@ import type { Node } from '@milkdown/kit/prose/model';
 import { Plugin } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { $prose } from '@milkdown/kit/utils';
+import { joinRelative, safeDecode } from './links';
 
 /** Callbacks that connect image handling to the tab's file. */
 export interface ImageHost {
@@ -17,17 +18,6 @@ function folderOf(path: string): string {
   return index < 0 ? '' : path.slice(0, index);
 }
 
-/** Joins a folder and a relative path, resolving `.` and `..` segments. */
-function joinPath(folder: string, relative: string): string {
-  const separator = folder.includes('\\') && !folder.includes('/') ? '\\' : '/';
-  const parts = folder.split(/[\\/]/);
-  for (const segment of relative.split(/[\\/]/)) {
-    if (segment === '..') parts.pop();
-    else if (segment !== '.' && segment !== '') parts.push(segment);
-  }
-  return parts.join(separator);
-}
-
 /**
  * Converts an image `src` from Markdown into a URL that the renderer can load.
  *
@@ -40,15 +30,9 @@ export function resolveImageSrc(src: string, documentPath: string): string {
   if (/^file:/i.test(src)) {
     path = decodeURIComponent(new URL(src).pathname).replace(/^\/([a-z]:)/i, '$1');
   } else {
-    const decoded = (() => {
-      try {
-        return decodeURI(src);
-      } catch {
-        return src;
-      }
-    })();
+    const decoded = safeDecode(src);
     const isAbsolute = /^([a-z]:[\\/]|[\\/])/i.test(decoded);
-    path = isAbsolute ? decoded : joinPath(folderOf(documentPath), decoded);
+    path = isAbsolute ? decoded : joinRelative(folderOf(documentPath), decoded);
   }
   return `mdimg://local/${encodeURIComponent(path)}`;
 }

@@ -69,3 +69,50 @@ export function applyLink(view: EditorView, href: string): void {
   view.dispatch(tr);
   view.focus();
 }
+
+/** What a link points to, for deciding how to open it. */
+export type LinkTarget =
+  | { readonly kind: 'web'; readonly url: string }
+  | { readonly kind: 'anchor'; readonly id: string }
+  | { readonly kind: 'markdown'; readonly path: string }
+  | { readonly kind: 'file'; readonly path: string };
+
+/** Classifies a link's `href` and resolves a relative path against the document. */
+export function resolveLink(href: string, documentPath: string): LinkTarget {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !/^file:/i.test(href) && !/^[a-z]:[\\/]/i.test(href)) {
+    return { kind: 'web', url: href };
+  }
+  if (href.startsWith('#')) return { kind: 'anchor', id: decodeURIComponent(href.slice(1)) };
+  const withoutFragment = href.replace(/[#?].*$/, '');
+  let path: string;
+  if (/^file:/i.test(withoutFragment)) {
+    path = decodeURIComponent(new URL(withoutFragment).pathname).replace(/^\/([a-z]:)/i, '$1');
+  } else {
+    const decoded = safeDecode(withoutFragment);
+    const index = Math.max(documentPath.lastIndexOf('/'), documentPath.lastIndexOf('\\'));
+    const folder = index < 0 ? '' : documentPath.slice(0, index);
+    path = /^([a-z]:[\\/]|[\\/])/i.test(decoded) ? decoded : joinRelative(folder, decoded);
+  }
+  return /\.(md|markdown|mdown|mkd)$/i.test(path)
+    ? { kind: 'markdown', path }
+    : { kind: 'file', path };
+}
+
+export function safeDecode(text: string): string {
+  try {
+    return decodeURI(text);
+  } catch {
+    return text;
+  }
+}
+
+/** Joins a folder and a relative path, resolving `.` and `..` segments. */
+export function joinRelative(folder: string, relative: string): string {
+  const separator = folder.includes('\\') && !folder.includes('/') ? '\\' : '/';
+  const parts = folder.split(/[\\/]/);
+  for (const segment of relative.split(/[\\/]/)) {
+    if (segment === '..') parts.pop();
+    else if (segment !== '.' && segment !== '') parts.push(segment);
+  }
+  return parts.join(separator);
+}

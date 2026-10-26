@@ -179,6 +179,9 @@ function registerIpc(): void {
     importImage(documentPath, image),
   );
 
+  // Linked files are revealed, not opened, so a document can't launch a program.
+  ipcMain.handle('shell:showInFolder', (_event, path: string) => shell.showItemInFolder(path));
+
   ipcMain.handle('file:read', async (_event, path: string) => {
     const text = await readText(path);
     watcher.noteWrite(path, text);

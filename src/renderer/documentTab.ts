@@ -1,6 +1,7 @@
 import type { EditorState } from '@milkdown/kit/prose/state';
 import type { SessionTab } from '@shared/api';
 import { imagePlugin, refreshImages } from './editor/images';
+import { linkClickPlugin } from './editor/linkClicks';
 import { MarkdownDocument } from './editor/markdownDocument';
 
 const AUTOSAVE_DELAY_MS = 1000;
@@ -15,6 +16,8 @@ export interface TabHost {
   /** Called when the tab's title, unsaved state, or content changes. */
   readonly onTabChanged: (tab: DocumentTab) => void;
   readonly onSaveError: (tab: DocumentTab, error: unknown) => void;
+  /** Opens a link that the user Ctrl+clicked in this tab. */
+  readonly openLink: (tab: DocumentTab, href: string) => void;
   /** Called when the editor's state changes, including the selection. */
   readonly onEditorState: (tab: DocumentTab, state: EditorState) => void;
 }
@@ -193,6 +196,7 @@ export class DocumentTab {
       onChange: () => this.markEdited(),
       onStateChange: (state) => this.host.onEditorState(this, state),
       plugins: [
+        linkClickPlugin((href) => this.host.openLink(this, href)),
         imagePlugin({
           documentPath: () => this.source.path,
           importFile: (file) => this.importImage(file),

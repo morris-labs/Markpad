@@ -187,3 +187,46 @@
   background: var(--surface);
   font-weight: normal;
 }
+
+.link-bubble {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: min(480px, calc(100vw - 16px));
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.link-bubble[hidden] {
+  display: none;
+}
+
+.link-bubble .link-address {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-bubble button {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-alt);
+  font-size: 12px;
+}
+
+.ProseMirror a {
+  cursor: text;
+}
+
+body.modifier-down .ProseMirror a {
+  cursor: pointer;
+}

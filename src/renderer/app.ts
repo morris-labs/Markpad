@@ -4,6 +4,8 @@ import type { EditorView } from '@milkdown/kit/prose/view';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
 import { insertImageAtSelection } from './editor/images';
+import { resolveLink } from './editor/links';
+import { LinkBubble } from './toolbar/linkBubble';
 import { ContextBar } from './toolbar/contextBar';
 import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
 import { DocumentTab, type TabHost, type TabSource } from './documentTab';
@@ -15,6 +17,7 @@ export class App implements TabHost {
 
   private readonly toolbar: Toolbar;
   private readonly contextBar: ContextBar;
+  private readonly linkBubble: LinkBubble;
 
   constructor(
     toolbarElement: HTMLElement,
@@ -31,6 +34,20 @@ export class App implements TabHost {
       contextBarElement,
       () => this.active?.document.editor.editor ?? null,
     );
+    this.linkBubble = new LinkBubble({
+      openLink: (href) => {
+        if (this.active) this.openLink(this.active, href);
+      },
+      editLink: (anchor) => this.toolbar.openLinkEditor(anchor),
+    });
+    documents.addEventListener('scroll', () => this.linkBubble.hide(), true);
+    const trackModifier = (event: KeyboardEvent): void => {
+      const down = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
+      document.body.classList.toggle('modifier-down', down);
+    };
+    document.addEventListener('keydown', trackModifier);
+    document.addEventListener('keyup', trackModifier);
+    window.addEventListener('blur', () => document.body.classList.remove('modifier-down'));
     document.addEventListener('keydown', (event) => {
       const modifier = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
       if (modifier && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'k') {
@@ -233,6 +250,32 @@ export class App implements TabHost {
     }
   }
 
+  /** Opens a link from a document: web links in the browser, Markdown files in a tab. */
+  openLink(tab: DocumentTab, href: string): void {
+    const target = resolveLink(href, tab.source.path);
+    switch (target.kind) {
+      case 'web':
+        window.open(target.url);
+        return;
+      case 'anchor': {
+        const headings = tab.pane.querySelectorAll<HTMLElement>(
+          '.ProseMirror :is(h1,h2,h3,h4,h5,h6)',
+        );
+        const match = [...headings].find(
+          (h) => h.id === target.id || h.id === target.id.toLowerCase(),
+        );
+        match?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      case 'markdown':
+        void this.openPaths([target.path]);
+        return;
+      case 'file':
+        void window.markpad.showInFolder(target.path);
+        return;
+    }
+  }
+
   private async insertImageFromDialog(): Promise<void> {
     const tab = this.active;
     if (!tab) return;
@@ -251,6 +294,7 @@ export class App implements TabHost {
   private refreshToolbar(view: EditorView): void {
     this.toolbar.refresh(getFormatState(view.state), { source: false, outline: false });
     this.contextBar.refresh(view);
+    this.linkBubble.refresh(view);
   }
 
   private cycleTabs(step: number): void {

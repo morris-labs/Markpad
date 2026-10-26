@@ -32,3 +32,28 @@ describe('resolveImageSrc', () => {
     expect(resolveImageSrc('file:///srv/a%20b.png', '/d.md')).toBe(encoded('/srv/a b.png'));
   });
 });
+
+describe('resolveLink', () => {
+  it('classifies web, anchor, Markdown, and other file links', async () => {
+    const { resolveLink } = await import('../../src/renderer/editor/links');
+    const doc = '/home/kai/notes/doc.md';
+    expect(resolveLink('https://example.com', doc)).toEqual({
+      kind: 'web',
+      url: 'https://example.com',
+    });
+    expect(resolveLink('mailto:kai@example.com', doc).kind).toBe('web');
+    expect(resolveLink('#setup-steps', doc)).toEqual({ kind: 'anchor', id: 'setup-steps' });
+    expect(resolveLink('../other%20note.md#part', doc)).toEqual({
+      kind: 'markdown',
+      path: '/home/kai/other note.md',
+    });
+    expect(resolveLink('files/report.pdf', doc)).toEqual({
+      kind: 'file',
+      path: '/home/kai/notes/files/report.pdf',
+    });
+    expect(resolveLink('C:\\docs\\a.md', 'C:\\docs\\b.md')).toEqual({
+      kind: 'markdown',
+      path: 'C:\\docs\\a.md',
+    });
+  });
+});

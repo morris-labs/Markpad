@@ -89,6 +89,9 @@ export interface MarkpadApi {
   /** Gets the path of a file that the user dropped or pasted, or an empty string. */
   getPathForFile(file: File): string;
 
+  /** Shows a file in the system file manager, without opening it. */
+  showInFolder(path: string): Promise<void>;
+
   readFile(path: string): Promise<FileSnapshot>;
   /** Writes a file atomically and stops reporting that write as an outside change. */
   writeFile(path: string, text: string): Promise<void>;

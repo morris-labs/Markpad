@@ -18,6 +18,8 @@ const api: MarkpadApi = {
     ipcRenderer.invoke('image:importBytes', documentPath, image),
   getPathForFile: (file) => webUtils.getPathForFile(file),
 
+  showInFolder: (path) => ipcRenderer.invoke('shell:showInFolder', path),
+
   readFile: (path) => ipcRenderer.invoke('file:read', path),
   writeFile: (path, text) => ipcRenderer.invoke('file:write', path, text),
   watchFile: (path) => ipcRenderer.invoke('file:watch', path),
