@@ -1,4 +1,6 @@
+import type { ThemeSetting } from '@shared/api';
 import { App } from './app';
+import './styles/tokens.css';
 import './styles/app.css';
 import './styles/document.css';
 import './styles/toolbar.css';
@@ -15,6 +17,15 @@ const app = new App(
   requireElement('context-bar'),
   requireElement('tab-bar'),
   requireElement('documents'),
+  requireElement('outline'),
   requireElement('status-bar'),
 );
+/** Applies the View > Theme setting; "system" leaves the choice to the OS. */
+function applyTheme(theme: ThemeSetting): void {
+  if (theme === 'system') delete document.documentElement.dataset['theme'];
+  else document.documentElement.dataset['theme'] = theme;
+}
+
+window.markpad.onThemeChanged(applyTheme);
+void window.markpad.getTheme().then(applyTheme);
 void app.start();

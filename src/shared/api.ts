@@ -89,6 +89,12 @@ export interface MarkpadApi {
   /** Gets the path of a file that the user dropped or pasted, or an empty string. */
   getPathForFile(file: File): string;
 
+  /**
+   * Asks where to save an export, then writes the HTML or a PDF printed from it.
+   *
+   * @returns The saved path, or null if the user canceled.
+   */
+  exportDocument(kind: 'html' | 'pdf', suggestedPath: string, html: string): Promise<string | null>;
   /** Shows a file in the system file manager, without opening it. */
   showInFolder(path: string): Promise<void>;
 
@@ -111,6 +117,9 @@ export interface MarkpadApi {
   onOpenPaths(listener: (paths: string[]) => void): void;
   /** Registers a listener for outside changes to watched files. */
   onFileChanged(listener: (snapshot: FileSnapshot) => void): void;
+  getTheme(): Promise<ThemeSetting>;
+  /** Registers a listener for changes to the theme setting in the View menu. */
+  onThemeChanged(listener: (theme: ThemeSetting) => void): void;
   /** Registers the handler that flushes pending saves before the window closes. */
   onBeforeClose(handler: () => Promise<void>): void;
 }

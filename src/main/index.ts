@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
+import { installContextMenu } from './contextMenu';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
 import {
@@ -12,6 +13,7 @@ import {
   registerImageSchemePrivileges,
   type ImageImport,
 } from './images';
+import { exportHtml, exportPdf } from './exporter';
 import { installMenu } from './menu';
 import { Settings } from './settings';
 
@@ -70,6 +72,7 @@ function refreshMenu(): void {
 
 async function applyTheme(theme: ThemeSetting): Promise<void> {
   nativeTheme.themeSource = theme;
+  mainWindow?.webContents.send('theme:changed', theme);
   await settings.setTheme(theme);
   refreshMenu();
 }
@@ -91,6 +94,7 @@ function createWindow(): BrowserWindow {
     },
   });
   win.once('ready-to-show', () => win.show());
+  installContextMenu(win);
 
   // The renderer flushes pending saves, then sends `app:closeReady`.
   win.on('close', (event) => {
@@ -127,6 +131,7 @@ function registerIpc(): void {
     const openPaths = pendingOpenPaths.splice(0);
     return { session: settings.session, openPaths };
   });
+  ipcMain.handle('theme:get', () => settings.theme);
   ipcMain.handle('session:save', async (_event, session: Session) => {
     await settings.setSession(session);
     const keep = new Set(session.tabs.flatMap((tab) => (tab.kind === 'draft' ? [tab.id] : [])));
@@ -181,6 +186,25 @@ function registerIpc(): void {
 
   // Linked files are revealed, not opened, so a document can't launch a program.
   ipcMain.handle('shell:showInFolder', (_event, path: string) => shell.showItemInFolder(path));
+
+  ipcMain.handle(
+    'export:save',
+    async (_event, kind: 'html' | 'pdf', suggestedPath: string, html: string) => {
+      if (!mainWindow) return null;
+      const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: suggestedPath.replace(/\.[^./\\]*$/, '') + `.${kind}`,
+        filters: [
+          kind === 'html'
+            ? { name: 'Web page', extensions: ['html', 'htm'] }
+            : { name: 'PDF', extensions: ['pdf'] },
+        ],
+      });
+      if (result.canceled || !result.filePath) return null;
+      if (kind === 'html') await exportHtml(result.filePath, html);
+      else await exportPdf(result.filePath, html);
+      return result.filePath;
+    },
+  );
 
   ipcMain.handle('file:read', async (_event, path: string) => {
     const text = await readText(path);

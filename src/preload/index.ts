@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
-import type { FileSnapshot, MarkpadApi, MenuAction } from '@shared/api';
+import type { FileSnapshot, MarkpadApi, MenuAction, ThemeSetting } from '@shared/api';
 
 const api: MarkpadApi = {
   platform: process.platform,
@@ -18,6 +18,8 @@ const api: MarkpadApi = {
     ipcRenderer.invoke('image:importBytes', documentPath, image),
   getPathForFile: (file) => webUtils.getPathForFile(file),
 
+  exportDocument: (kind, suggestedPath, html) =>
+    ipcRenderer.invoke('export:save', kind, suggestedPath, html),
   showInFolder: (path) => ipcRenderer.invoke('shell:showInFolder', path),
 
   readFile: (path) => ipcRenderer.invoke('file:read', path),
@@ -39,6 +41,10 @@ const api: MarkpadApi = {
   },
   onFileChanged: (listener) => {
     ipcRenderer.on('file:changed', (_event, snapshot: FileSnapshot) => listener(snapshot));
+  },
+  getTheme: () => ipcRenderer.invoke('theme:get'),
+  onThemeChanged: (listener) => {
+    ipcRenderer.on('theme:changed', (_event, theme: ThemeSetting) => listener(theme));
   },
   onBeforeClose: (handler) => {
     ipcRenderer.on('app:beforeClose', () => {

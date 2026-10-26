@@ -27,7 +27,10 @@ const EXTENSION_BY_TYPE: Readonly<Record<string, string>> = Object.fromEntries(
 /** Registers the image scheme's privileges. Call this before the app is ready. */
 export function registerImageSchemePrivileges(): void {
   protocol.registerSchemesAsPrivileged([
-    { scheme: IMAGE_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
+    {
+      scheme: IMAGE_SCHEME,
+      privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true },
+    },
   ]);
 }
 
@@ -46,7 +49,10 @@ export function handleImageScheme(): void {
     if (!type) return new Response('Not an image', { status: 403 });
     const response = await net.fetch(pathToFileURL(path).toString()).catch(() => null);
     if (!response?.ok) return new Response('Not found', { status: 404 });
-    return new Response(response.body, { headers: { 'content-type': type } });
+    // The renderer page has a file: origin, so export reads images through CORS.
+    return new Response(response.body, {
+      headers: { 'content-type': type, 'access-control-allow-origin': '*' },
+    });
   });
 }
 

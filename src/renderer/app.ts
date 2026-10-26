@@ -2,9 +2,11 @@ import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
 import { callCommand } from '@milkdown/kit/utils';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
+import { buildExportHtml } from './exportDocument';
 import { insertImageAtSelection } from './editor/images';
 import { resolveLink } from './editor/links';
 import { FindBar } from './panels/findBar';
+import { OutlinePanel } from './panels/outline';
 import { LinkBubble } from './toolbar/linkBubble';
 import { ContextBar } from './toolbar/contextBar';
 import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
@@ -19,12 +21,14 @@ export class App implements TabHost {
   private readonly contextBar: ContextBar;
   private readonly linkBubble: LinkBubble;
   private readonly findBar: FindBar;
+  private readonly outline: OutlinePanel;
 
   constructor(
     toolbarElement: HTMLElement,
     contextBarElement: HTMLElement,
     private readonly tabBar: HTMLElement,
     private readonly documents: HTMLElement,
+    outlineElement: HTMLElement,
     private readonly statusBar: HTMLElement,
   ) {
     this.toolbar = new Toolbar(toolbarElement, {
@@ -43,6 +47,7 @@ export class App implements TabHost {
     });
     documents.addEventListener('scroll', () => this.linkBubble.hide(), true);
     this.findBar = new FindBar(documents);
+    this.outline = new OutlinePanel(outlineElement);
     const trackModifier = (event: KeyboardEvent): void => {
       const down = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
       document.body.classList.toggle('modifier-down', down);
@@ -91,9 +96,14 @@ export class App implements TabHost {
   }
 
   onSaveError(tab: DocumentTab, error: unknown): void {
+    this.showError(`Couldn't save ${tab.title}`, error);
+  }
+
+  /** Shows an error in the status bar until the next status update. */
+  private showError(message: string, error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
     this.statusBar.dataset['error'] = 'true';
-    this.setStatus(`Couldn't save ${tab.title}: ${reason}`);
+    this.setStatus(`${message}: ${reason}`);
   }
 
   async newDraft(): Promise<void> {
@@ -242,10 +252,12 @@ export class App implements TabHost {
         else if (tab) this.findBar.open(tab.document.editor.view, action === 'replace');
         return;
       case 'toggle-outline':
+        this.outline.toggle();
+        this.refreshActiveChrome();
+        return;
       case 'export-html':
       case 'export-pdf':
-        // Later plan steps add these features.
-        return;
+        return tab ? this.exportTab(tab, action === 'export-html' ? 'html' : 'pdf') : undefined;
     }
   }
 
@@ -288,6 +300,20 @@ export class App implements TabHost {
     }
   }
 
+  private async exportTab(tab: DocumentTab, kind: 'html' | 'pdf'): Promise<void> {
+    // Export renders the styled view, so leave source mode first.
+    if (tab.isSourceMode) await this.runMenuAction('toggle-source');
+    try {
+      const html = await buildExportHtml(tab.document.editor.view.dom, tab.title);
+      const suggested =
+        tab.source.kind === 'file' ? tab.source.path : tab.title.replace(/[\\/:*?"<>|]/g, '');
+      const path = await window.markpad.exportDocument(kind, suggested, html);
+      if (path) this.setStatus(`Exported to ${path}`);
+    } catch (error) {
+      this.showError(`Couldn't export ${tab.title}`, error);
+    }
+  }
+
   private async insertImageFromDialog(): Promise<void> {
     const tab = this.active;
     if (!tab) return;
@@ -299,7 +325,7 @@ export class App implements TabHost {
       const alt = (path.split(/[\\/]/).pop() ?? '').replace(/\.[^.]+$/, '');
       insertImageAtSelection(tab.document.editor.view, src, alt);
     } catch (error) {
-      this.onSaveError(tab, error);
+      this.showError("Couldn't insert the image", error);
     }
   }
 
@@ -309,8 +335,9 @@ export class App implements TabHost {
     const view = tab && tab.isMounted && !tab.isSourceMode ? tab.document.editor.view : null;
     this.toolbar.refresh(view ? getFormatState(view.state) : null, {
       source: tab?.isSourceMode ?? false,
-      outline: false,
+      outline: this.outline.isVisible,
     });
+    this.outline.refresh(view);
     this.contextBar.refresh(view);
     this.linkBubble.refresh(view);
     this.findBar.attach(view);

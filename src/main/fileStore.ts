@@ -4,11 +4,11 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 
 /** Writes a file through a temporary file and a rename, so readers never see a partial file. */
-export async function writeFileAtomic(path: string, text: string): Promise<void> {
+export async function writeFileAtomic(path: string, data: string | Uint8Array): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   const temp = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
   try {
-    await writeFile(temp, text, 'utf8');
+    await writeFile(temp, data);
     await rename(temp, path);
   } catch (error) {
     await rm(temp, { force: true });
