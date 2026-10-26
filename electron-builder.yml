@@ -1,0 +1,43 @@
+appId: com.markpad.editor
+productName: Markpad
+copyright: Copyright 2026 Isaac Morris
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**
+  - resources/icon.png
+  - package.json
+asar: true
+fileAssociations:
+  - ext: [md, markdown, mdown, mkd]
+    name: Markdown document
+    description: Markdown document
+    mimeType: text/markdown
+    role: Editor
+    icon: icon
+linux:
+  target: [AppImage, deb]
+  category: Office
+  icon: icon-1024.png
+  executableName: markpad
+  syncDesktopName: true
+  synopsis: A lightweight WYSIWYG Markdown editor
+  mimeTypes: [text/markdown]
+  desktop:
+    entry:
+      StartupWMClass: Markpad
+deb:
+  depends: [libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0]
+win:
+  target: [nsis]
+  icon: icon-1024.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+mac:
+  target: [dmg]
+  category: public.app-category.productivity
+  icon: icon-1024.png
+  identity: null

@@ -3,6 +3,8 @@ import { callCommand } from '@milkdown/kit/utils';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
 import { buildExportHtml } from './exportDocument';
+import { countWords, formatWordCount } from './wordCount';
+import type { Node as ProseNode } from '@milkdown/kit/prose/model';
 import { insertImageAtSelection } from './editor/images';
 import { resolveLink } from './editor/links';
 import { FindBar } from './panels/findBar';
@@ -22,6 +24,8 @@ export class App implements TabHost {
   private readonly linkBubble: LinkBubble;
   private readonly findBar: FindBar;
   private readonly outline: OutlinePanel;
+  /** The last counted document, so selection changes don't recount it. */
+  private counted: { doc: ProseNode; words: number } | null = null;
 
   constructor(
     toolbarElement: HTMLElement,
@@ -342,6 +346,31 @@ export class App implements TabHost {
     this.linkBubble.refresh(view);
     this.findBar.attach(view);
     this.findBar.updateCount();
+    this.renderWordCount();
+  }
+
+  /** Shows the word count, recounting the whole document only when it changes. */
+  private renderWordCount(): void {
+    const tab = this.active;
+    const label = this.statusBar.querySelector('.status-words');
+    if (!tab || !label || !tab.isMounted) return;
+    let total: number;
+    let selected = 0;
+    if (tab.sourceEditor) {
+      total = countWords(tab.sourceEditor.text);
+    } else {
+      const { state } = tab.document.editor.view;
+      if (this.counted?.doc !== state.doc) {
+        this.counted = {
+          doc: state.doc,
+          words: countWords(state.doc.textBetween(0, state.doc.content.size, '\n', ' ')),
+        };
+      }
+      total = this.counted.words;
+      const { from, to, empty } = state.selection;
+      if (!empty) selected = countWords(state.doc.textBetween(from, to, '\n', ' '));
+    }
+    label.textContent = formatWordCount(total, selected);
   }
 
   private cycleTabs(step: number): void {
@@ -449,7 +478,8 @@ export class App implements TabHost {
     delete this.statusBar.dataset['error'];
     const where = tab.source.kind === 'file' ? tab.source.path : 'Not saved to a file';
     const state = tab.hasPendingSave ? 'Saving...' : 'Saved';
-    this.setStatus(`${where}  |  ${tab.source.kind === 'file' ? state : 'Draft'}`);
+    const mode = tab.isSourceMode ? '  |  Markdown source' : '';
+    this.setStatus(`${where}  |  ${tab.source.kind === 'file' ? state : 'Draft'}${mode}`);
   }
 
   private setStatus(text: string): void {

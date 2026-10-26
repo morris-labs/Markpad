@@ -1,0 +1,53 @@
+# Markpad
+
+Markpad is a lightweight desktop editor for Markdown files. It opens a file
+in a styled, editable view, like a small word processor, and saves the file
+as Markdown.
+
+## Features
+
+- **Styled editing**: Type Markdown syntax, such as `**bold**`, `# `, or
+  `- `, and it turns into formatting as you type. A toolbar applies the same
+  formatting.
+- **Tabs and autosave**: Open several files in tabs. Markpad saves each
+  file one second after you stop typing, and reopens your tabs at the next
+  launch. Untitled documents stay in a drafts folder until you save them as
+  a file.
+- **Your file's style**: Markpad writes back only what you edit. Unedited
+  parts of a file keep their exact text, and edited parts follow the
+  file's own conventions, such as `*` or `-` bullets.
+- **GitHub Flavored Markdown**: Tables, task lists, and strikethrough.
+- **Code**: Syntax highlighting for common languages.
+- **Images**: Local images by relative path. Pasted or dropped images are
+  copied into an `assets` folder next to the file.
+- **Source view**: Switch to the raw Markdown at any time.
+- **Find and replace**, an **outline** of the headings, and **spell check**.
+- **Export** to a standalone HTML page or a PDF.
+- **Front matter**: Edit a file's YAML front matter in a panel above the
+  document.
+- **Light and dark themes**: Follow the OS, or choose one in **View > Theme**.
+
+## Keyboard shortcuts
+
+On macOS, use Cmd in place of Ctrl.
+
+| Action               | Shortcut         |
+|----------------------|------------------|
+| New document         | Ctrl+N           |
+| Open                 | Ctrl+O           |
+| Save as              | Ctrl+Shift+S     |
+| Close tab            | Ctrl+W           |
+| Next or previous tab | Ctrl+Tab, Ctrl+Shift+Tab |
+| Bold, italic         | Ctrl+B, Ctrl+I   |
+| Inline code          | Ctrl+E           |
+| Strikethrough        | Ctrl+Alt+X       |
+| Link                 | Ctrl+K           |
+| Open a link          | Ctrl+click       |
+| Find, replace        | Ctrl+F, Ctrl+H   |
+| Markdown source      | Ctrl+/           |
+| Outline              | Ctrl+Shift+O     |
+
+## Build and develop
+
+For development commands, see the `CLAUDE.md` file. For installers, see
+[Build Markpad installers](BUILDING.md).

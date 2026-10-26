@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
 import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
+import icon from '../../resources/icon.png?asset';
 import { installContextMenu } from './contextMenu';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
@@ -85,6 +86,7 @@ function createWindow(): BrowserWindow {
     minHeight: 320,
     title: 'Markpad',
     show: false,
+    ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
       contextIsolation: true,
