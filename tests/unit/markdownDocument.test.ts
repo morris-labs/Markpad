@@ -102,3 +102,15 @@ describe('MarkdownDocument edits', () => {
     expect(doc.toFileText()).toBe('# Title!\r\n\r\nText\r\n');
   });
 });
+
+describe('MarkdownDocument with many blocks', () => {
+  it('keeps every unedited block when one block in a long file changes', async () => {
+    const blocks = Array.from({ length: 400 }, (_, i) =>
+      i % 3 === 0 ? `_para_ ${i}` : i % 3 === 1 ? `* item ${i}` : `Head ${i}\n--------`,
+    );
+    const text = `${blocks.join('\n\n')}\n`;
+    const doc = await openText(text);
+    typeAtEndOfFirstBlock(doc, '!');
+    expect(doc.toFileText()).toBe(text.replace('_para_ 0', '_para_ 0!'));
+  });
+});

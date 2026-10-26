@@ -108,23 +108,41 @@ export class BlockPreserver {
 
 /** Matches equal items of two sequences, and maps each index of `a` to one of `b`. */
 function longestCommonSubsequence(a: readonly string[], b: readonly string[]): Map<number, number> {
-  const rows = a.length + 1;
-  const cols = b.length + 1;
-  const table = new Uint32Array(rows * cols);
-  for (let i = a.length - 1; i >= 0; i--) {
-    for (let j = b.length - 1; j >= 0; j--) {
+  const pairs = new Map<number, number>();
+  // A typical edit touches one block, so match the shared start and end
+  // directly and run the quadratic table only on the middle.
+  let head = 0;
+  while (head < a.length && head < b.length && a[head] === b[head]) {
+    pairs.set(head, head);
+    head++;
+  }
+  let tail = 0;
+  while (
+    tail < a.length - head &&
+    tail < b.length - head &&
+    a[a.length - 1 - tail] === b[b.length - 1 - tail]
+  ) {
+    pairs.set(a.length - 1 - tail, b.length - 1 - tail);
+    tail++;
+  }
+
+  const midA = a.slice(head, a.length - tail);
+  const midB = b.slice(head, b.length - tail);
+  const cols = midB.length + 1;
+  const table = new Uint32Array((midA.length + 1) * cols);
+  for (let i = midA.length - 1; i >= 0; i--) {
+    for (let j = midB.length - 1; j >= 0; j--) {
       table[i * cols + j] =
-        a[i] === b[j]
+        midA[i] === midB[j]
           ? (table[(i + 1) * cols + j + 1] ?? 0) + 1
           : Math.max(table[(i + 1) * cols + j] ?? 0, table[i * cols + j + 1] ?? 0);
     }
   }
-  const pairs = new Map<number, number>();
   let i = 0;
   let j = 0;
-  while (i < a.length && j < b.length) {
-    if (a[i] === b[j]) {
-      pairs.set(i++, j++);
+  while (i < midA.length && j < midB.length) {
+    if (midA[i] === midB[j]) {
+      pairs.set(head + i++, head + j++);
     } else if ((table[(i + 1) * cols + j] ?? 0) >= (table[i * cols + j + 1] ?? 0)) {
       i++;
     } else {
