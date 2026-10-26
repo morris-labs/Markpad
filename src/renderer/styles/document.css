@@ -1,0 +1,217 @@
+/* The page: a centered column that reads like a printed document. */
+.front-matter,
+.editor-host {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.front-matter {
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+}
+
+.front-matter summary {
+  padding: 6px 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.front-matter textarea {
+  display: block;
+  width: 100%;
+  min-height: 6em;
+  padding: 8px 12px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--mono-font);
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.editor-host .milkdown {
+  min-height: calc(100vh - 220px);
+  padding: 56px 72px;
+  background: var(--surface);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+}
+
+.editor-host .ProseMirror {
+  min-height: 100%;
+  outline: none;
+  font:
+    16px/1.65 Georgia,
+    'Iowan Old Style',
+    'Times New Roman',
+    serif;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
+  font-family: var(--ui-font);
+  line-height: 1.25;
+  margin: 1.4em 0 0.5em;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--border);
+}
+
+.ProseMirror h3 {
+  font-size: 1.25em;
+}
+
+.ProseMirror h4 {
+  font-size: 1.05em;
+}
+
+.ProseMirror h5,
+.ProseMirror h6 {
+  font-size: 0.95em;
+  color: var(--text-muted);
+}
+
+.ProseMirror p {
+  margin: 0 0 0.9em;
+}
+
+.ProseMirror a {
+  color: var(--accent);
+}
+
+.ProseMirror blockquote {
+  margin: 0 0 0.9em;
+  padding: 0 1em;
+  border-left: 4px solid var(--border);
+  color: var(--text-muted);
+}
+
+.ProseMirror code {
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: var(--surface-alt);
+  font: 0.88em var(--mono-font);
+}
+
+.ProseMirror pre {
+  margin: 0 0 0.9em;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.ProseMirror pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.85em;
+}
+
+.ProseMirror hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 2px solid var(--border);
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0 0 0.9em;
+  padding-left: 1.6em;
+}
+
+.ProseMirror li > p {
+  margin: 0.15em 0;
+}
+
+.ProseMirror li[data-item-type='task'] {
+  list-style: none;
+  position: relative;
+}
+
+.ProseMirror li[data-item-type='task']::before {
+  content: '';
+  position: absolute;
+  left: -1.4em;
+  top: 0.35em;
+  width: 0.9em;
+  height: 0.9em;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ProseMirror li[data-item-type='task'][data-checked='true']::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.ProseMirror li[data-item-type='task'][data-checked='true'] > p {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  margin: 0 0 0.9em;
+  font-family: var(--ui-font);
+  font-size: 0.92em;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  min-width: 3em;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.ProseMirror th {
+  background: var(--surface-alt);
+  font-weight: 600;
+}
+
+.ProseMirror td p,
+.ProseMirror th p {
+  margin: 0;
+}
+
+.ProseMirror .selectedCell {
+  background: var(--accent-soft);
+}
+
+.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+}
+
+@media (max-width: 760px) {
+  .editor-host .milkdown {
+    padding: 32px 24px;
+  }
+}

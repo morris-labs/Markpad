@@ -20,7 +20,8 @@ export function parseMarkdownFile(text: string): MarkdownFile {
   const lf = (text.match(/\n/g) ?? []).length - crlf;
   const eol = crlf > lf ? '\r\n' : '\n';
   let rest = text.replace(/\r\n/g, '\n');
-  const finalNewline = rest.endsWith('\n');
+  // An empty file gets the POSIX convention of a trailing newline once it has text.
+  const finalNewline = rest === '' || rest.endsWith('\n');
 
   let frontMatter: string | null = null;
   let frontMatterSource: string | null = null;

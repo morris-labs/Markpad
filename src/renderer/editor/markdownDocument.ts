@@ -41,12 +41,11 @@ export class MarkdownDocument {
   static async open(options: OpenDocumentOptions): Promise<MarkdownDocument> {
     const file = parseMarkdownFile(options.text);
     const style = file.body === '' ? DEFAULT_STYLE : detectStyle(file.body);
-    const { onChange } = options;
     const editor = await createEditor({
       root: options.root,
       markdown: file.body,
       stringifyOptions: { ...style },
-      ...(onChange ? { onChange: () => onChange() } : {}),
+      ...(options.onChange ? { onChange: options.onChange } : {}),
     });
     const preserver = new BlockPreserver(file.body, editor.canonicalize);
     return new MarkdownDocument(editor, file, preserver);

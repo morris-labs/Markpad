@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { MarkpadApi } from '@shared/api';
 
 declare global {
