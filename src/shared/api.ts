@@ -52,6 +52,7 @@ export type MenuAction =
   | 'previous-tab'
   | 'undo'
   | 'redo'
+  | 'copy-html'
   | 'find'
   | 'replace'
   | 'toggle-source'
@@ -97,6 +98,8 @@ export interface MarkpadApi {
    * @returns The saved path, or null if the user canceled.
    */
   exportDocument(kind: 'html' | 'pdf', suggestedPath: string, html: string): Promise<string | null>;
+  /** Puts HTML on the clipboard, with plain text for programs that can't paste HTML. */
+  writeClipboard(content: { readonly html: string; readonly text: string }): Promise<void>;
   /** Shows a file in the system file manager, without opening it. */
   showInFolder(path: string): Promise<void>;
 

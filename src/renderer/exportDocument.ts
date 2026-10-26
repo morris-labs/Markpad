@@ -3,7 +3,7 @@ import syntaxCss from './styles/syntax.css?raw';
 import tokensCss from './styles/tokens.css?raw';
 
 /** Styles for exported files: the light theme only, plus print layout. */
-const EXPORT_CSS = `${tokensCss.split('/* dark-theme */')[0] ?? ''}
+export const EXPORT_CSS = `${tokensCss.split('/* dark-theme */')[0] ?? ''}
 ${documentCss}
 ${syntaxCss}
 :root { color-scheme: light; }
@@ -50,23 +50,13 @@ async function toDataUrl(url: string): Promise<string | null> {
 }
 
 /**
- * Builds a standalone HTML page from the rendered document.
+ * Removes editing markup from a copy of rendered editor content, and embeds
+ * its local images as data URIs.
  *
- * Local images are embedded as data URIs, so the page has no outside
- * dependencies; web images keep their URLs.
- *
- * @param rendered The editor's content element.
- * @param fallbackTitle The page title when the document has no level 1 heading.
+ * @param content A detached copy of rendered content, which this function changes.
  */
-export async function buildExportHtml(
-  rendered: HTMLElement,
-  fallbackTitle: string,
-): Promise<string> {
-  const content = rendered.cloneNode(true);
-  if (!(content instanceof HTMLElement)) throw new Error('The document has no content to export.');
+export async function cleanRenderedContent(content: HTMLElement): Promise<void> {
   content.removeAttribute('contenteditable');
-  content.removeAttribute('translate');
-  content.removeAttribute('role');
   for (const element of content.querySelectorAll(
     '.ProseMirror-separator, .ProseMirror-trailingBreak',
   )) {
@@ -88,6 +78,26 @@ export async function buildExportHtml(
       img.removeAttribute('data-src');
     }),
   );
+}
+
+/**
+ * Builds a standalone HTML page from the rendered document.
+ *
+ * Local images are embedded as data URIs, so the page has no outside
+ * dependencies; web images keep their URLs.
+ *
+ * @param rendered The editor's content element.
+ * @param fallbackTitle The page title when the document has no level 1 heading.
+ */
+export async function buildExportHtml(
+  rendered: HTMLElement,
+  fallbackTitle: string,
+): Promise<string> {
+  const content = rendered.cloneNode(true);
+  if (!(content instanceof HTMLElement)) throw new Error('The document has no content to export.');
+  content.removeAttribute('translate');
+  content.removeAttribute('role');
+  await cleanRenderedContent(content);
 
   const title = content.querySelector('h1')?.textContent?.trim() || fallbackTitle;
   return `<!doctype html>

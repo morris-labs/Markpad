@@ -1,6 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  ClipboardItem,
+  dialog,
+  ipcMain,
+  nativeTheme,
+  shell,
+} from 'electron';
 import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
 import icon from '../../resources/icon.png?asset';
 import { parseFileArgs } from './args';
@@ -201,6 +210,10 @@ function registerIpc(): void {
   });
   ipcMain.handle('image:importBytes', (_event, documentPath: string, image: ImageImport) =>
     importImage(documentPath, image),
+  );
+
+  ipcMain.handle('clipboard:write', (_event, content: { html: string; text: string }) =>
+    clipboard.write([new ClipboardItem({ 'text/html': content.html, 'text/plain': content.text })]),
   );
 
   // Linked files are revealed, not opened, so a document can't launch a program.

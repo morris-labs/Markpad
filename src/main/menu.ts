@@ -70,6 +70,7 @@ export function installMenu(
         { type: 'separator' },
         { role: 'cut' },
         { role: 'copy' },
+        action('Copy as HTML', 'copy-html', 'CmdOrCtrl+Shift+C'),
         { role: 'paste' },
         { role: 'selectAll' },
         { type: 'separator' },

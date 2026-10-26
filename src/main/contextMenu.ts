@@ -31,6 +31,15 @@ export function installContextMenu(win: BrowserWindow): void {
       items.push(
         { role: 'cut', enabled: params.editFlags.canCut },
         { role: 'copy', enabled: params.editFlags.canCopy },
+        // Form fields such as the find bar hold plain text, so only the editor offers HTML.
+        ...(params.formControlType === 'none'
+          ? [
+              {
+                label: params.selectionText ? 'Copy as HTML' : 'Copy all as HTML',
+                click: () => contents.send('menu:action', 'copy-html'),
+              },
+            ]
+          : []),
         { role: 'paste', enabled: params.editFlags.canPaste },
         { type: 'separator' },
         { role: 'selectAll' },

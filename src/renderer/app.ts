@@ -2,6 +2,7 @@ import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
 import { callCommand } from '@milkdown/kit/utils';
 import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
 import { getFormatState } from './editor/commands';
+import { buildClipboardHtml } from './copyHtml';
 import { buildExportHtml } from './exportDocument';
 import { countWords, formatWordCount } from './wordCount';
 import type { Node as ProseNode } from '@milkdown/kit/prose/model';
@@ -259,6 +260,8 @@ export class App implements TabHost {
         this.outline.toggle();
         this.refreshActiveChrome();
         return;
+      case 'copy-html':
+        return tab ? this.copyAsHtml(tab) : undefined;
       case 'export-html':
       case 'export-pdf':
         return tab ? this.exportTab(tab, action === 'export-html' ? 'html' : 'pdf') : undefined;
@@ -301,6 +304,23 @@ export class App implements TabHost {
       case 'file':
         void window.markpad.showInFolder(target.path);
         return;
+    }
+  }
+
+  private async copyAsHtml(tab: DocumentTab): Promise<void> {
+    if (tab.isSourceMode) {
+      this.setStatus('To copy as HTML, switch to the styled view');
+      return;
+    }
+    try {
+      await window.markpad.writeClipboard(await buildClipboardHtml(tab.document.editor.view));
+      this.setStatus(
+        tab.document.editor.view.state.selection.empty
+          ? 'Copied the document as HTML'
+          : 'Copied the selection as HTML',
+      );
+    } catch (error) {
+      this.showError("Couldn't copy as HTML", error);
     }
   }
 

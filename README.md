@@ -23,6 +23,10 @@ as Markdown.
 - **Source view**: Switch to the raw Markdown at any time.
 - **Find and replace**, an **outline** of the headings, and **spell check**.
 - **Export** to a standalone HTML page or a PDF.
+- **Copy as HTML**: To paste formatted text into an email, right-click and
+  choose **Copy as HTML**. Without a selection, it copies the whole
+  document. The copy uses inline styles and the light theme, and embeds
+  local images.
 - **Front matter**: Edit a file's YAML front matter in a panel above the
   document.
 - **Light and dark themes**: Follow the OS, or choose one in **View > Theme**.
@@ -70,6 +74,7 @@ On macOS, use Cmd in place of Ctrl.
 | Strikethrough        | Ctrl+Alt+X       |
 | Link                 | Ctrl+K           |
 | Open a link          | Ctrl+click       |
+| Copy as HTML         | Ctrl+Shift+C     |
 | Find, replace        | Ctrl+F, Ctrl+H   |
 | Markdown source      | Ctrl+/           |
 | Outline              | Ctrl+Shift+O     |

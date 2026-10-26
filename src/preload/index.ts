@@ -20,6 +20,7 @@ const api: MarkpadApi = {
 
   exportDocument: (kind, suggestedPath, html) =>
     ipcRenderer.invoke('export:save', kind, suggestedPath, html),
+  writeClipboard: (content) => ipcRenderer.invoke('clipboard:write', content),
   showInFolder: (path) => ipcRenderer.invoke('shell:showInFolder', path),
 
   readFile: (path, allowMissing) => ipcRenderer.invoke('file:read', path, allowMissing),
