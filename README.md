@@ -2,7 +2,40 @@
 
 Markpad is a lightweight desktop editor for Markdown files. It opens a file
 in a styled, editable view, like a small word processor, and saves the file
-as Markdown.
+as Markdown. It runs on Linux, Windows, and macOS.
+
+![Markpad editing a Markdown file](docs/screenshot.png)
+
+## Install
+
+Download Markpad from the
+[latest release](https://github.com/GITHUB_USER/Markpad/releases/latest).
+
+- **Debian, Ubuntu, and other Debian-based Linux**: Download the
+  `markpad_VERSION_amd64.deb` file and install it:
+
+  ```
+  sudo apt install ./markpad_VERSION_amd64.deb
+  ```
+
+  Replace `VERSION` with the version you downloaded, such as `1.0.0`.
+
+- **Other Linux distributions**: Download the `Markpad-VERSION.AppImage`
+  file, make it executable with `chmod +x Markpad-VERSION.AppImage`, and
+  run it.
+
+- **Windows**: Download and run the `Markpad-Setup-VERSION.exe` installer.
+
+- **macOS**: Download the `Markpad-VERSION-arm64.dmg` disk image for Apple
+  silicon or `Markpad-VERSION-x64.dmg` for Intel, open it, and drag
+  **Markpad** to the **Applications** folder.
+
+If a release doesn't list an installer for your system yet, you can build
+one from source. For instructions, see [Build Markpad installers](BUILDING.md).
+The installers aren't code-signed, so Windows and macOS warn the first time
+you open Markpad; that guide also explains how to open it anyway.
+
+Markpad doesn't update itself. To update, install the newer release.
 
 ## Features
 
@@ -82,7 +115,23 @@ On macOS, use Cmd in place of Ctrl.
 | Markdown source      | Ctrl+/           |
 | Outline              | Ctrl+Shift+O     |
 
+## Known limitations
+
+- Save As to another folder doesn't copy the document's images, so
+  relative image paths can break. Untitled documents move their images
+  correctly when you first save them.
+- Raw HTML in a Markdown file shows as text, not as rendered HTML.
+- Switching out of the Markdown source view clears the undo history.
+- Very large files, with thousands of paragraphs, are slower to open.
+- The installers aren't code-signed, so Windows SmartScreen and macOS
+  Gatekeeper warn the first time you open Markpad.
+
 ## Build and develop
 
-For development commands, see the `CLAUDE.md` file. For installers, see
+To set up a development environment and run the tests, see
+[Contribute to Markpad](CONTRIBUTING.md). To build installers, see
 [Build Markpad installers](BUILDING.md).
+
+## License
+
+Markpad is released under the [MIT License](LICENSE).
