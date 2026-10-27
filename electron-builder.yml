@@ -38,11 +38,14 @@ win:
   target: [nsis]
   icon: icon.ico
 nsis:
+  # A name without spaces, so the release asset keeps its name on GitHub.
+  artifactName: ${productName}-Setup-${version}.${ext}
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
 mac:
   target: [dmg]
+  artifactName: ${productName}-${version}-${arch}.${ext}
   category: public.app-category.productivity
   icon: icon.icns
   identity: null
