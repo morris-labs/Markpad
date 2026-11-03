@@ -1,6 +1,6 @@
 import { redoCommand, undoCommand } from '@milkdown/kit/plugin/history';
 import { callCommand } from '@milkdown/kit/utils';
-import type { FileSnapshot, MenuAction, SessionTab } from '@shared/api';
+import type { FileSnapshot, MenuAction, SessionTab, TabMenuAction } from '@shared/api';
 import { getFormatState } from './editor/commands';
 import { buildClipboardHtml } from './copyHtml';
 import { buildExportHtml } from './exportDocument';
@@ -9,11 +9,12 @@ import type { Node as ProseNode } from '@milkdown/kit/prose/model';
 import { insertImageAtSelection } from './editor/images';
 import { resolveLink } from './editor/links';
 import { FindBar } from './panels/findBar';
+import { OpenPathDialog } from './panels/openPathDialog';
 import { OutlinePanel } from './panels/outline';
 import { LinkBubble } from './toolbar/linkBubble';
 import { ContextBar } from './toolbar/contextBar';
 import { Toolbar, type ToolbarCommand } from './toolbar/toolbar';
-import { DocumentTab, type TabHost, type TabSource } from './documentTab';
+import { dirName, DocumentTab, type TabHost, type TabSource } from './documentTab';
 
 /** Owns the tabs, the tab bar, and the status bar, and routes menu commands. */
 export class App implements TabHost {
@@ -25,6 +26,7 @@ export class App implements TabHost {
   private readonly linkBubble: LinkBubble;
   private readonly findBar: FindBar;
   private readonly outline: OutlinePanel;
+  private readonly openPathDialog: OpenPathDialog;
   /** The last counted document, so selection changes don't recount it. */
   private counted: { doc: ProseNode; words: number } | null = null;
 
@@ -53,6 +55,7 @@ export class App implements TabHost {
     documents.addEventListener('scroll', () => this.linkBubble.hide(), true);
     this.findBar = new FindBar(documents);
     this.outline = new OutlinePanel(outlineElement);
+    this.openPathDialog = new OpenPathDialog((text) => this.openPastedPaths(text));
     const trackModifier = (event: KeyboardEvent): void => {
       const down = window.markpad.platform === 'darwin' ? event.metaKey : event.ctrlKey;
       document.body.classList.toggle('modifier-down', down);
@@ -120,6 +123,20 @@ export class App implements TabHost {
     await this.openPaths(await window.markpad.showOpenDialog());
   }
 
+  /**
+   * Opens the files named in pasted text.
+   *
+   * @returns A message for the dialog if a path has no file; otherwise null.
+   */
+  private async openPastedPaths(text: string): Promise<string | null> {
+    const source = this.active?.source;
+    const base = source?.kind === 'file' ? dirName(source.path) : null;
+    const { found, notFound } = await window.markpad.resolvePastedPaths(text, base);
+    if (notFound.length > 0) return `Can't find a file at ${notFound.join(', ')}`;
+    void this.openPaths(found);
+    return null;
+  }
+
   /** Opens each path in a tab, or focuses the tab that already has it. */
   async openPaths(paths: readonly string[]): Promise<void> {
     for (const path of paths) {
@@ -166,7 +183,12 @@ export class App implements TabHost {
     await this.saveSession();
   }
 
-  async closeTab(tab: DocumentTab): Promise<void> {
+  /**
+   * Closes a tab, asking first if a draft has text.
+   *
+   * @returns False if the user chose to keep the tab; otherwise true.
+   */
+  async closeTab(tab: DocumentTab): Promise<boolean> {
     const api = window.markpad;
     if (tab.source.kind === 'draft' && !tab.isEmpty) {
       this.activate(tab);
@@ -177,10 +199,10 @@ export class App implements TabHost {
         defaultId: 0,
         cancelId: 2,
       });
-      if (choice === 2) return;
+      if (choice === 2) return false;
       if (choice === 0) {
         await this.saveAs(tab);
-        if (tab.source.kind === 'draft') return;
+        if (tab.source.kind === 'draft') return false;
       }
     }
     await tab.flush();
@@ -200,6 +222,46 @@ export class App implements TabHost {
     if (this.tabs.length === 0) await this.newDraft();
     this.renderTabBar();
     await this.saveSession();
+    return true;
+  }
+
+  /** Closes tabs in order, and stops if the user chooses to keep one. */
+  private async closeTabs(tabs: readonly DocumentTab[]): Promise<void> {
+    for (const tab of tabs) {
+      // Closing the only blank tab just replaces it with another.
+      if (this.tabs.length === 1 && this.isBlank(tab)) return;
+      if (!(await this.closeTab(tab))) return;
+    }
+  }
+
+  private isBlank(tab: DocumentTab): boolean {
+    return tab.source.kind === 'draft' && tab.isEmpty;
+  }
+
+  /** Handles the Close tab command: with no document open, it closes the app. */
+  private async closeActiveTab(): Promise<void> {
+    const tab = this.active;
+    if (!tab) return;
+    if (this.tabs.length === 1 && this.isBlank(tab)) await window.markpad.closeWindow();
+    else await this.closeTab(tab);
+  }
+
+  /** Shows the menu for a tab and runs the chosen command. */
+  private async showTabMenu(tab: DocumentTab): Promise<void> {
+    const index = this.tabs.indexOf(tab);
+    const targets: Record<TabMenuAction, readonly DocumentTab[]> = {
+      close: [tab],
+      'close-others': this.tabs.filter((other) => other !== tab),
+      'close-left': this.tabs.slice(0, index),
+      'close-right': this.tabs.slice(index + 1),
+      'close-unchanged': this.tabs.filter((other) => other.isUnchanged),
+      'close-all': [...this.tabs],
+    };
+    const enabled = (Object.keys(targets) as TabMenuAction[]).filter(
+      (action) => targets[action].length > 0,
+    );
+    const choice = await window.markpad.showTabMenu(enabled);
+    if (choice) await this.closeTabs(targets[choice]);
   }
 
   activate(tab: DocumentTab): void {
@@ -227,10 +289,13 @@ export class App implements TabHost {
         return this.newDraft();
       case 'open':
         return this.openWithDialog();
+      case 'open-path':
+        this.openPathDialog.open();
+        return;
       case 'save-as':
         return tab ? this.saveAs(tab) : undefined;
       case 'close-tab':
-        return tab ? this.closeTab(tab) : undefined;
+        return this.closeActiveTab();
       case 'next-tab':
       case 'previous-tab':
         return this.cycleTabs(action === 'next-tab' ? 1 : -1);
@@ -501,6 +566,10 @@ export class App implements TabHost {
         } else if (event.button === 0) {
           this.activate(tab);
         }
+      });
+      item.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        void this.showTabMenu(tab);
       });
       item.append(label, close);
       return item;

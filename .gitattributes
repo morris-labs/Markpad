@@ -1,4 +1,4 @@
 *.cmd text eol=crlf
-resources/bin/mdv text eol=lf
+resources/bin/mpd text eol=lf
 *.ps1 text eol=crlf
 *.sh text eol=lf

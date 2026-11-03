@@ -14,8 +14,11 @@ The first release.
   folder.
 - Markdown source view, find and replace, an outline panel, and spell
   check.
+- Right-click a tab to close it, other tabs, tabs to its left or right,
+  unchanged tabs, or all tabs.
+- Open path (Ctrl+L) opens a file from a pasted path.
 - Print, export to PDF or HTML, and Copy as HTML for pasting into email.
 - An editable front matter panel.
 - Light and dark themes that follow the OS, with an override.
-- The `mdv` command, which opens files from a terminal.
+- The `mpd` command, which opens files from a terminal.
 - Linux AppImage and Debian packages.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copied from the electron-builder template, with the mdv link added at the end.
+# Copied from the electron-builder template, with the mpd link added at the end.
 
 if type update-alternatives >/dev/null 2>&1; then
     # Remove previous link if it doesn't use update-alternatives
@@ -62,6 +62,15 @@ if apparmor_status --enabled > /dev/null 2>&1; then
   fi
 fi
 
-# Markpad: link the mdv terminal command.
-chmod 0755 '/opt/${sanitizedProductName}/resources/bin/mdv' || true
-ln -sf '/opt/${sanitizedProductName}/resources/bin/mdv' '/usr/bin/mdv'
+# Markpad: link the mpd terminal command.
+# The name also belongs to Music Player Daemon, so don't replace another program.
+chmod 0755 '/opt/${sanitizedProductName}/resources/bin/mpd' || true
+if [ -e '/usr/bin/mpd' ] && [ "$(readlink '/usr/bin/mpd' 2>/dev/null)" != '/opt/${sanitizedProductName}/resources/bin/mpd' ]; then
+  echo "Markpad: /usr/bin/mpd belongs to another program, so the mpd command isn't linked."
+else
+  ln -sf '/opt/${sanitizedProductName}/resources/bin/mpd' '/usr/bin/mpd'
+fi
+# Markpad: remove the link from when the command was named mdv.
+if [ "$(readlink '/usr/bin/mdv' 2>/dev/null)" = '/opt/${sanitizedProductName}/resources/bin/mdv' ]; then
+  rm -f '/usr/bin/mdv'
+fi

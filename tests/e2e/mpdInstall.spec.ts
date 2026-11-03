@@ -6,9 +6,9 @@ import { createWorkspace } from './app';
 
 const BINARY = join(import.meta.dirname, '../../dist/linux-unpacked/markpad');
 
-// Runs only after `npm run dist:linux`, and only where no package installed /usr/bin/mdv.
-test('Help > Install mdv command writes a launcher to ~/.local/bin', async () => {
-  test.skip(!existsSync(BINARY) || existsSync('/usr/bin/mdv'), 'Needs the unpacked build.');
+// Runs only after `npm run dist:linux`, and only where no package installed /usr/bin/mpd.
+test('Help > Install mpd command writes a launcher to ~/.local/bin', async () => {
+  test.skip(!existsSync(BINARY) || existsSync('/usr/bin/mpd'), 'Needs the unpacked build.');
   const ws = createWorkspace();
   const home = mkdtempSync(join(tmpdir(), 'markpad-home-'));
   const app = await electron.launch({
@@ -32,14 +32,14 @@ test('Help > Install mdv command writes a launcher to ~/.local/bin', async () =>
       return shown;
     }, label);
 
-  const installed = await clickHelpItem("Install 'mdv' command");
-  expect(installed).toContain("The 'mdv' command is installed.");
-  const script = join(home, '.local', 'bin', 'mdv');
+  const installed = await clickHelpItem("Install 'mpd' command");
+  expect(installed).toContain("The 'mpd' command is installed.");
+  const script = join(home, '.local', 'bin', 'mpd');
   expect(statSync(script).mode & 0o111).not.toBe(0);
   expect(readFileSync(script, 'utf8')).toContain(`DEFAULT_APP='${BINARY}'`);
 
-  const removed = await clickHelpItem("Remove 'mdv' command");
-  expect(removed).toContain("The 'mdv' command is removed.");
+  const removed = await clickHelpItem("Remove 'mpd' command");
+  expect(removed).toContain("The 'mpd' command is removed.");
   expect(existsSync(script)).toBe(false);
   await app.close();
 });

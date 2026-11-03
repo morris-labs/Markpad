@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copied from the electron-builder template, with the mdv link added at the end.
+# Copied from the electron-builder template, with the mpd link added at the end.
 
 # Delete the link to the binary
 # update-alternatives --remove <name> <path>: 'path' must be the registered alternative binary,
@@ -26,7 +26,7 @@ if [ -f "$APPARMOR_PROFILE_DEST" ]; then
   fi
   rm -f "$APPARMOR_PROFILE_DEST"
 fi
-# Markpad: remove the mdv terminal command if it still points into this package.
-if [ "$(readlink '/usr/bin/mdv' 2>/dev/null)" = '/opt/${sanitizedProductName}/resources/bin/mdv' ]; then
-  rm -f '/usr/bin/mdv'
+# Markpad: remove the mpd terminal command if it still points into this package.
+if [ "$(readlink '/usr/bin/mpd' 2>/dev/null)" = '/opt/${sanitizedProductName}/resources/bin/mpd' ]; then
+  rm -f '/usr/bin/mpd'
 fi

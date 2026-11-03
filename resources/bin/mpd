@@ -1,11 +1,11 @@
 #!/bin/sh
-# mdv opens Markdown files in Markpad from a terminal.
+# mpd opens Markdown files in Markpad from a terminal.
 #
-# Markpad keeps one window: mdv adds each file as a tab in the running app,
+# Markpad keeps one window: mpd adds each file as a tab in the running app,
 # or starts the app, and then returns to the prompt.
 
-# The "Install 'mdv' command" menu item fills in DEFAULT_APP. When it's empty,
-# mdv looks for the app next to this script inside the installed package.
+# The "Install 'mpd' command" menu item fills in DEFAULT_APP. When it's empty,
+# mpd looks for the app next to this script inside the installed package.
 DEFAULT_APP=''
 APP="${MARKPAD_APP:-$DEFAULT_APP}"
 if [ -z "$APP" ]; then
@@ -18,17 +18,17 @@ if [ -z "$APP" ]; then
   done
 fi
 if [ -z "$APP" ] || [ ! -x "$APP" ]; then
-  echo "mdv: can't find the Markpad app. Set MARKPAD_APP to its executable." >&2
+  echo "mpd: can't find the Markpad app. Set MARKPAD_APP to its executable." >&2
   exit 1
 fi
 
 usage() {
   cat <<'HELP'
-Usage: mdv [OPTION]... [FILE]...
+Usage: mpd [OPTION]... [FILE]...
 Open each FILE in Markpad, in a tab of the running window.
 
 A FILE that doesn't exist opens as an empty document, and Markpad creates it
-when you type. With no FILE, mdv starts Markpad or brings it to the front.
+when you type. With no FILE, mpd starts Markpad or brings it to the front.
 
 Options:
   -h, --help       Show this help and exit.
@@ -49,8 +49,8 @@ case "${1:-}" in
     shift
     ;;
   -*)
-    echo "mdv: unknown option: $1" >&2
-    echo "Try 'mdv --help' for more information." >&2
+    echo "mpd: unknown option: $1" >&2
+    echo "Try 'mpd --help' for more information." >&2
     exit 2
     ;;
 esac

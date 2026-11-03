@@ -10,6 +10,10 @@ const api: MarkpadApi = {
   showOpenDialog: () => ipcRenderer.invoke('dialog:open'),
   showSaveDialog: (suggestedName) => ipcRenderer.invoke('dialog:save', suggestedName),
   ask: (options) => ipcRenderer.invoke('dialog:ask', options),
+  resolvePastedPaths: (text, baseFolder) =>
+    ipcRenderer.invoke('file:resolvePasted', text, baseFolder),
+  showTabMenu: (enabled) => ipcRenderer.invoke('menu:tab', enabled),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
 
   showOpenImageDialog: () => ipcRenderer.invoke('dialog:openImage'),
   importImageFile: (documentPath, imagePath) =>

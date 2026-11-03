@@ -191,19 +191,22 @@ To build a release again on one machine, run the agent by hand with
 On Windows, run
 `powershell -ExecutionPolicy Bypass -File %LOCALAPPDATA%\MarkpadReleaseAgent\MarkpadReleaseAgent.ps1 -Repo GITHUB_USER/Markpad -Force`.
 
-## The mdv command
+## The mpd command
 
-The `resources/bin/mdv` file (POSIX shell) and the `resources/bin/mdv.cmd`
+The `resources/bin/mpd` file (POSIX shell) and the `resources/bin/mpd.cmd`
 file (Windows) ship in each package's `resources/bin` folder. The Debian
-package links `/usr/bin/mdv` to the shell script in its install script,
+package links `/usr/bin/mpd` to the shell script in its install script,
 `resources/linux/after-install.sh`, and removes the link in
 `resources/linux/after-remove.sh`. Both scripts are copies of the
 electron-builder templates with lines added at the end; when you update
 electron-builder, compare them with the templates in
 `node_modules/app-builder-lib/templates/linux/`.
 
-On other platforms, **Help > Install 'mdv' command** writes a copy of the
+On other platforms, **Help > Install 'mpd' command** writes a copy of the
 script with the app's path filled in.
+
+Music Player Daemon also uses the name `mpd`. The install script and the menu
+item don't replace a file that isn't Markpad's script.
 
 ## File associations
 

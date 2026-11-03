@@ -52,6 +52,8 @@ export class DocumentTab {
   private savedText: string;
   /** True if the document has changed since it was last written. */
   private edited = false;
+  /** True if the user has edited the document since this tab opened it. */
+  private touched = false;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
   private saving: Promise<void> = Promise.resolve();
 
@@ -113,6 +115,11 @@ export class DocumentTab {
   /** Checks whether an edit is waiting to be written. */
   get hasPendingSave(): boolean {
     return this.edited;
+  }
+
+  /** Checks whether closing the tab loses no work: it's unedited and has no draft text. */
+  get isUnchanged(): boolean {
+    return !this.touched && (this.source.kind === 'file' || this.isEmpty);
   }
 
   get isEmpty(): boolean {
@@ -272,6 +279,7 @@ export class DocumentTab {
 
   private markEdited(): void {
     this.edited = true;
+    this.touched = true;
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => void this.flush(), AUTOSAVE_DELAY_MS);
     this.host.onTabChanged(this);
