@@ -17,6 +17,8 @@ The first release.
 - Right-click a tab to close it, other tabs, tabs to its left or right,
   unchanged tabs, or all tabs.
 - Open path (Ctrl+L) opens a file from a pasted path.
+- Text and code files, such as `.txt`, `.java`, `.json`, and `.xml` files,
+  open as text with syntax highlighting instead of as Markdown.
 - Print, export to PDF or HTML, and Copy as HTML for pasting into email.
 - An editable front matter panel.
 - Light and dark themes that follow the OS, with an override.

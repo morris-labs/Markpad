@@ -39,12 +39,11 @@ export class App implements TabHost {
     private readonly statusBar: HTMLElement,
   ) {
     this.toolbar = new Toolbar(toolbarElement, {
-      getEditor: () => this.active?.document.editor.editor ?? null,
+      getEditor: () => (this.active?.isMounted ? this.active.document.editor.editor : null),
       runCommand: (command) => void this.runToolbarCommand(command),
     });
-    this.contextBar = new ContextBar(
-      contextBarElement,
-      () => this.active?.document.editor.editor ?? null,
+    this.contextBar = new ContextBar(contextBarElement, () =>
+      this.active?.isMounted ? this.active.document.editor.editor : null,
     );
     this.linkBubble = new LinkBubble({
       openLink: (href) => {
@@ -308,7 +307,9 @@ export class App implements TabHost {
         else tab?.document.editor.editor.action(callCommand(redoCommand.key));
         return;
       case 'toggle-source':
-        if (tab) {
+        if (tab?.isPlainFile) {
+          this.setStatus(`${tab.title} isn't Markdown, so it has no styled view`);
+        } else if (tab) {
           await tab.toggleSourceMode();
           this.refreshActiveChrome();
         }
@@ -379,6 +380,10 @@ export class App implements TabHost {
   }
 
   private async copyAsHtml(tab: DocumentTab): Promise<void> {
+    if (tab.isPlainFile) {
+      this.setStatus('Printing, export, and Copy as HTML work on Markdown documents');
+      return;
+    }
     if (tab.isSourceMode) {
       this.setStatus('To copy as HTML, switch to the styled view');
       return;
@@ -396,6 +401,10 @@ export class App implements TabHost {
   }
 
   private async printTab(tab: DocumentTab): Promise<void> {
+    if (tab.isPlainFile) {
+      this.setStatus('Printing, export, and Copy as HTML work on Markdown documents');
+      return;
+    }
     // Printing renders the styled view, so leave source mode first.
     if (tab.isSourceMode) await this.runMenuAction('toggle-source');
     try {
@@ -408,6 +417,10 @@ export class App implements TabHost {
   }
 
   private async exportTab(tab: DocumentTab, kind: 'html' | 'pdf'): Promise<void> {
+    if (tab.isPlainFile) {
+      this.setStatus('Printing, export, and Copy as HTML work on Markdown documents');
+      return;
+    }
     // Export renders the styled view, so leave source mode first.
     if (tab.isSourceMode) await this.runMenuAction('toggle-source');
     try {
@@ -423,7 +436,7 @@ export class App implements TabHost {
 
   private async insertImageFromDialog(): Promise<void> {
     const tab = this.active;
-    if (!tab) return;
+    if (!tab?.isMounted || tab.isSourceMode) return;
     const api = window.markpad;
     const path = await api.showOpenImageDialog();
     if (!path) return;
@@ -456,7 +469,7 @@ export class App implements TabHost {
   private renderWordCount(): void {
     const tab = this.active;
     const label = this.statusBar.querySelector('.status-words');
-    if (!tab || !label || !tab.isMounted) return;
+    if (!tab || !label || !(tab.isMounted || tab.sourceEditor)) return;
     let total: number;
     let selected = 0;
     if (tab.sourceEditor) {
@@ -585,7 +598,11 @@ export class App implements TabHost {
     delete this.statusBar.dataset['error'];
     const where = tab.source.kind === 'file' ? tab.source.path : 'Not saved to a file';
     const state = tab.hasPendingSave ? 'Saving...' : 'Saved';
-    const mode = tab.isSourceMode ? '  |  Markdown source' : '';
+    const mode = tab.isPlainFile
+      ? `  |  ${tab.fileKind}`
+      : tab.isSourceMode
+        ? '  |  Markdown source'
+        : '';
     this.setStatus(`${where}  |  ${tab.source.kind === 'file' ? state : 'Draft'}${mode}`);
   }
 

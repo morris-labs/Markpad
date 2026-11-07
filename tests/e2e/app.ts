@@ -43,7 +43,7 @@ export async function launchApp(
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: 'true' },
   });
   const page = await app.firstWindow();
-  await expect(page.locator('.document-pane.active .ProseMirror')).toBeVisible();
+  await expect(page.locator('.document-pane.active :is(.ProseMirror, .cm-content)')).toBeVisible();
   return { app, page };
 }
 
