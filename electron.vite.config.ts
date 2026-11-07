@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'electron-vite';
+import { devServerOptions } from './devServer';
 
 export default defineConfig({
   main: {
@@ -24,6 +25,6 @@ export default defineConfig({
       rollupOptions: { input: { index: resolve('src/renderer/index.html') } },
     },
     resolve: { alias: { '@shared': resolve('src/shared') } },
-    server: { host: '0.0.0.0', port: 20390, strictPort: true },
+    server: devServerOptions(),
   },
 });
