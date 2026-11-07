@@ -204,7 +204,7 @@ export class App implements TabHost {
         if (tab.source.kind === 'draft') return false;
       }
     }
-    await tab.flush();
+    if (!(await tab.flush()) && !(await this.confirmDiscard([tab]))) return false;
     if (tab.source.kind === 'draft') {
       await api.deleteDraft(tab.source.id);
     } else {
@@ -276,9 +276,29 @@ export class App implements TabHost {
     void this.saveSession();
   }
 
-  async flushAll(): Promise<void> {
-    await Promise.all(this.tabs.map((tab) => tab.flush()));
+  /** Asks whether to discard edits that couldn't be saved. */
+  private async confirmDiscard(tabs: readonly DocumentTab[]): Promise<boolean> {
+    const choice = await window.markpad.ask({
+      message: `Couldn't save ${tabs.map((t) => t.title).join(', ')}.`,
+      detail: 'Closing now discards the unsaved edits.',
+      buttons: ['Keep open', 'Discard edits'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    return choice === 1;
+  }
+
+  /**
+   * Saves every tab before the window closes.
+   *
+   * @returns False if a save failed and the user chose to keep the window open; otherwise true.
+   */
+  async flushAll(): Promise<boolean> {
+    const results = await Promise.all(this.tabs.map((tab) => tab.flush()));
+    const failed = this.tabs.filter((_, i) => !results[i]);
+    if (failed.length > 0 && !(await this.confirmDiscard(failed))) return false;
     await this.saveSession();
+    return true;
   }
 
   async runMenuAction(action: MenuAction): Promise<void> {

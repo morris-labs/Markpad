@@ -162,6 +162,9 @@ export interface MarkpadApi {
   getTheme(): Promise<ThemeSetting>;
   /** Registers a listener for changes to the theme setting in the View menu. */
   onThemeChanged(listener: (theme: ThemeSetting) => void): void;
-  /** Registers the handler that flushes pending saves before the window closes. */
-  onBeforeClose(handler: () => Promise<void>): void;
+  /**
+   * Registers the handler that flushes pending saves before the window closes.
+   * The window stays open if the handler resolves to false.
+   */
+  onBeforeClose(handler: () => Promise<boolean>): void;
 }

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { chmodSync, existsSync } from 'node:fs';
 import { expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import { closeApp, createWorkspace, editor, launchApp, menu } from './app';
 
@@ -114,5 +114,41 @@ test('Open path opens a pasted path and reports one with no file', async () => {
   await input.press('Enter');
   await expect(page.locator('.open-path-dialog')).not.toBeVisible();
   await expect(editor(page).locator('h1')).toHaveText('Pasted');
+  await closeApp(app);
+});
+
+test('F-0003: closing a tab whose save fails keeps it open unless you discard', async () => {
+  const ws = createWorkspace();
+  const file = ws.write('locked.md', '# Locked\n');
+  chmodSync(file, 0o444);
+  chmodSync(ws.docs, 0o555);
+  const { app, page } = await launchApp(ws, [file]);
+  await editor(page).click();
+  await page.keyboard.type('Unsaved ');
+
+  const answer = async (response: number): Promise<void> => {
+    await app.evaluate(({ dialog }, r) => {
+      const g = dialog as unknown as { asked: number };
+      g.asked = 0;
+      dialog.showMessageBox = (async () => {
+        g.asked += 1;
+        return { response: r, checkboxChecked: false };
+      }) as never;
+    }, response);
+  };
+  const asked = (): Promise<number> =>
+    app.evaluate(({ dialog }) => (dialog as unknown as { asked: number }).asked);
+
+  await answer(0);
+  await menu(app, 'close-tab');
+  await expect.poll(asked).toBe(1);
+  await expect(editor(page)).toContainText('Unsaved');
+  await expect(page.locator('#tab-bar .tab-label')).toHaveText(['locked.md']);
+
+  await answer(1);
+  await menu(app, 'close-tab');
+  await expect.poll(asked).toBe(1);
+  await expect(page.locator('#tab-bar .tab-label')).toHaveText(['Untitled']);
+  chmodSync(ws.docs, 0o755);
   await closeApp(app);
 });

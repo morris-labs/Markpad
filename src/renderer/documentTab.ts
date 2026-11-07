@@ -225,11 +225,16 @@ export class DocumentTab {
     return text !== this.savedText;
   }
 
-  /** Writes pending edits now. */
-  async flush(): Promise<void> {
+  /**
+   * Writes pending edits now.
+   *
+   * @returns False if the write failed and the edits are still unsaved; otherwise true.
+   */
+  async flush(): Promise<boolean> {
     clearTimeout(this.saveTimer);
     this.saving = this.saving.then(() => this.writeIfEdited());
     await this.saving;
+    return !this.edited;
   }
 
   /** Copies an image file into this document's assets folder and returns its relative path. */
