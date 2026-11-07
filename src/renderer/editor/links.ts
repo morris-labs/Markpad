@@ -82,11 +82,11 @@ export function resolveLink(href: string, documentPath: string): LinkTarget {
   if (/^[a-z][a-z0-9+.-]*:/i.test(href) && !/^file:/i.test(href) && !/^[a-z]:[\\/]/i.test(href)) {
     return { kind: 'web', url: href };
   }
-  if (href.startsWith('#')) return { kind: 'anchor', id: decodeURIComponent(href.slice(1)) };
+  if (href.startsWith('#')) return { kind: 'anchor', id: safeDecodeComponent(href.slice(1)) };
   const withoutFragment = href.replace(/[#?].*$/, '');
   let path: string;
   if (/^file:/i.test(withoutFragment)) {
-    path = decodeURIComponent(new URL(withoutFragment).pathname).replace(/^\/([a-z]:)/i, '$1');
+    path = safeDecodeComponent(new URL(withoutFragment).pathname).replace(/^\/([a-z]:)/i, '$1');
   } else {
     const decoded = safeDecode(withoutFragment);
     const index = Math.max(documentPath.lastIndexOf('/'), documentPath.lastIndexOf('\\'));
@@ -96,6 +96,15 @@ export function resolveLink(href: string, documentPath: string): LinkTarget {
   return /\.(md|markdown|mdown|mkd)$/i.test(path)
     ? { kind: 'markdown', path }
     : { kind: 'file', path };
+}
+
+/** Like `decodeURIComponent`, but returns the text unchanged on a malformed escape. */
+export function safeDecodeComponent(text: string): string {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
 }
 
 export function safeDecode(text: string): string {
