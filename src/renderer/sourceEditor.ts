@@ -1,4 +1,6 @@
 import {
+  addCursorAbove,
+  addCursorBelow,
   defaultKeymap,
   history,
   historyKeymap,
@@ -12,13 +14,22 @@ import { languages } from '@codemirror/language-data';
 import {
   highlightSelectionMatches,
   openSearchPanel,
+  selectSelectionMatches,
   search,
   searchKeymap,
 } from '@codemirror/search';
-import { Compartment, EditorState, type Extension } from '@codemirror/state';
+import {
+  Compartment,
+  EditorSelection,
+  EditorState,
+  type Extension,
+  type StateCommand,
+} from '@codemirror/state';
 import {
   EditorView,
+  crosshairCursor,
   drawSelection,
+  rectangularSelection,
   highlightActiveLine,
   keymap,
   lineNumbers,
@@ -62,6 +73,33 @@ export interface SourceOptions {
   readonly fileName: string | null;
 }
 
+/** Splits each selection into one cursor at the end of each line it covers, like Sublime Text. */
+export const splitSelectionIntoLines: StateCommand = ({ state, dispatch }) => {
+  const ranges = state.selection.ranges.flatMap((range) => {
+    if (range.empty) return [range];
+    const parts = [];
+    for (let pos = range.from; pos <= range.to;) {
+      const line = state.doc.lineAt(pos);
+      const from = Math.max(line.from, range.from);
+      const to = Math.min(line.to, range.to);
+      if (to > from || line.from === range.from) parts.push(EditorSelection.range(from, to));
+      pos = line.to + 1;
+    }
+    return parts;
+  });
+  if (ranges.length === state.selection.ranges.length) return false;
+  dispatch(state.update({ selection: EditorSelection.create(ranges), scrollIntoView: true }));
+  return true;
+};
+
+/** Sublime Text's multiple-cursor shortcuts, ahead of the default keymap. */
+const multiCursorKeymap = [
+  { key: 'Mod-Shift-l', run: splitSelectionIntoLines },
+  { key: 'Alt-F3', run: selectSelectionMatches },
+  { key: 'Alt-Shift-ArrowUp', run: addCursorAbove, preventDefault: true },
+  { key: 'Alt-Shift-ArrowDown', run: addCursorBelow, preventDefault: true },
+];
+
 /** Gets the display name of the language for a file, such as `Java`, or null if it has none. */
 export function languageName(fileName: string): string | null {
   return LanguageDescription.matchFilename(languages, fileName)?.name ?? null;
@@ -97,6 +135,9 @@ export class SourceEditor {
         doc: text,
         extensions: [
           lineNumbers(),
+          EditorState.allowMultipleSelections.of(true),
+          rectangularSelection(),
+          crosshairCursor(),
           history(),
           drawSelection(),
           highlightActiveLine(),
@@ -109,7 +150,13 @@ export class SourceEditor {
             spellcheck: String(isProse),
             'aria-label': options.fileName === null ? 'Markdown source' : 'File text',
           }),
-          keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
+          keymap.of([
+            ...multiCursorKeymap,
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...searchKeymap,
+            indentWithTab,
+          ]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChange();
           }),

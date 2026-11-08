@@ -24,6 +24,7 @@ import icon from '../../resources/icon.png?asset';
 import { parseFileArgs, resolvePastedPaths } from './args';
 import { installCommand, uninstallCommand, type CommandResult } from './cliInstaller';
 import { installContextMenu, showTabMenu } from './contextMenu';
+import { BackupStore } from './backups';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
 import {
@@ -55,6 +56,7 @@ const pendingOpenPaths: string[] = [];
 
 const settings = new Settings(app.getPath('userData'));
 const drafts = new DraftStore(join(app.getPath('userData'), 'drafts'));
+const backups = new BackupStore(join(app.getPath('userData'), 'backups'));
 const watcher = new FileWatcher((path, text) => {
   mainWindow?.webContents.send('file:changed', { path, text });
 });
@@ -179,11 +181,11 @@ function registerIpc(): void {
   ipcMain.handle('session:startup', async (): Promise<StartupState> => {
     rendererReady = true;
     const openPaths = pendingOpenPaths.splice(0);
-    return { session: settings.session, openPaths };
+    return { session: await backups.load(settings.session), openPaths };
   });
   ipcMain.handle('theme:get', () => settings.theme);
   ipcMain.handle('session:save', async (_event, session: Session) => {
-    await settings.setSession(session);
+    await settings.setSession(await backups.store(session));
     const keep = new Set(session.tabs.flatMap((tab) => (tab.kind === 'draft' ? [tab.id] : [])));
     await drafts.pruneEmpty(keep);
   });

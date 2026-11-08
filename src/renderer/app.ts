@@ -204,7 +204,23 @@ export class App implements TabHost {
         if (tab.source.kind === 'draft') return false;
       }
     }
-    if (!(await tab.flush()) && !(await this.confirmDiscard([tab]))) return false;
+    if (!(await tab.flush())) {
+      // As in Sublime Text: offer another place to save, or let the edits go.
+      this.activate(tab);
+      const choice = await api.ask({
+        message: `Save changes to ${tab.title} before closing?`,
+        detail: "Markpad couldn't save this file, so your recent edits aren't on disk.",
+        buttons: ['Save as...', 'Close without saving', 'Cancel'],
+        defaultId: 0,
+        cancelId: 2,
+      });
+      if (choice === 2) return false;
+      if (choice === 0) {
+        const before = tab.source;
+        await this.saveAs(tab);
+        if (tab.source === before) return false;
+      }
+    }
     if (tab.source.kind === 'draft') {
       await api.deleteDraft(tab.source.id);
     } else {
@@ -276,27 +292,15 @@ export class App implements TabHost {
     void this.saveSession();
   }
 
-  /** Asks whether to discard edits that couldn't be saved. */
-  private async confirmDiscard(tabs: readonly DocumentTab[]): Promise<boolean> {
-    const choice = await window.markpad.ask({
-      message: `Couldn't save ${tabs.map((t) => t.title).join(', ')}.`,
-      detail: 'Closing now discards the unsaved edits.',
-      buttons: ['Keep open', 'Discard edits'],
-      defaultId: 0,
-      cancelId: 0,
-    });
-    return choice === 1;
-  }
-
   /**
-   * Saves every tab before the window closes.
+   * Saves every tab before the window closes. Like Sublime Text's hot exit, it
+   * never blocks the close: the session keeps edits that couldn't be written,
+   * and the next launch restores them.
    *
-   * @returns False if a save failed and the user chose to keep the window open; otherwise true.
+   * @returns True, so the window always closes.
    */
   async flushAll(): Promise<boolean> {
-    const results = await Promise.all(this.tabs.map((tab) => tab.flush()));
-    const failed = this.tabs.filter((_, i) => !results[i]);
-    if (failed.length > 0 && !(await this.confirmDiscard(failed))) return false;
+    await Promise.all(this.tabs.map((tab) => tab.flush()));
     // Every tab is already saved, so a failed session write must not block closing.
     try {
       await this.saveSession();
@@ -524,11 +528,28 @@ export class App implements TabHost {
   private async restoreTab(entry: SessionTab): Promise<void> {
     try {
       if (entry.kind === 'file') {
-        const file = await window.markpad.readFile(entry.path);
-        await this.addTab({ kind: 'file', path: entry.path }, file.text, false);
+        // A file with restored edits might be gone or unreadable; the edits still come back.
+        const diskText = await window.markpad.readFile(entry.path).then(
+          (file) => file.text,
+          (error: unknown) => {
+            if (entry.unsavedText === undefined) throw error;
+            return '';
+          },
+        );
+        const tab = await this.addTab(
+          { kind: 'file', path: entry.path },
+          entry.unsavedText ?? diskText,
+          false,
+        );
+        if (entry.unsavedText !== undefined) tab.restoreUnsaved(diskText);
       } else {
         const draft = await window.markpad.readDraft(entry.id);
-        await this.addTab({ kind: 'draft', id: draft.id, path: draft.path }, draft.text, false);
+        const tab = await this.addTab(
+          { kind: 'draft', id: draft.id, path: draft.path },
+          entry.unsavedText ?? draft.text,
+          false,
+        );
+        if (entry.unsavedText !== undefined) tab.restoreUnsaved(draft.text);
       }
     } catch {
       // The file was moved or deleted since the last session.

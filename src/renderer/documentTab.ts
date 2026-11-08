@@ -59,6 +59,8 @@ export class DocumentTab {
   private savedText: string;
   /** True if the document has changed since it was last written. */
   private edited = false;
+  /** True if the last write failed, so the edits exist only in this tab. */
+  private saveFailed = false;
   /** True if the user has edited the document since this tab opened it. */
   private touched = false;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -193,9 +195,20 @@ export class DocumentTab {
   }
 
   get sessionEntry(): SessionTab {
+    const unsaved = this.saveFailed ? { unsavedText: this.currentText() } : {};
     return this.source.kind === 'file'
-      ? { kind: 'file', path: this.source.path }
-      : { kind: 'draft', id: this.source.id };
+      ? { kind: 'file', path: this.source.path, ...unsaved }
+      : { kind: 'draft', id: this.source.id, ...unsaved };
+  }
+
+  /**
+   * Marks the tab's text as unsaved edits on top of `diskText`, after a restart
+   * restored edits that couldn't be written. Autosave tries the write again.
+   */
+  restoreUnsaved(diskText: string): void {
+    this.savedText = diskText;
+    this.saveFailed = true;
+    this.markEdited();
   }
 
   /** Replaces the document with text from disk and clears any pending edit. */
@@ -328,12 +341,16 @@ export class DocumentTab {
     if (!this.edited || !(this.documentValue || this.sourceView)) return;
     this.edited = false;
     const text = this.currentText();
-    if (text !== this.savedText) {
+    if (text === this.savedText) {
+      this.saveFailed = false;
+    } else {
       try {
         await window.markpad.writeFile(this.source.path, text);
         this.savedText = text;
+        this.saveFailed = false;
       } catch (error) {
         this.edited = true;
+        this.saveFailed = true;
         this.host.onSaveError(this, error);
       }
     }
