@@ -9,7 +9,7 @@ as Markdown. It runs on Linux, Windows, and macOS.
 ## Install
 
 Download Markpad from the
-[latest release](https://github.com/GITHUB_USER/Markpad/releases/latest).
+[latest release](https://github.com/morris-labs/Markpad/releases/latest).
 
 - **Debian, Ubuntu, and other Debian-based Linux**: Download the
   `markpad_VERSION_amd64.deb` file and install it:
@@ -18,7 +18,7 @@ Download Markpad from the
   sudo apt install ./markpad_VERSION_amd64.deb
   ```
 
-  Replace `VERSION` with the version you downloaded, such as `1.0.0`.
+  Replace `VERSION` with the version you downloaded, such as `2.0.0`.
 
 - **Other Linux distributions**: Download the `Markpad-VERSION.AppImage`
   file, make it executable with `chmod +x Markpad-VERSION.AppImage`, and

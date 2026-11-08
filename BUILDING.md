@@ -134,10 +134,8 @@ while the computer sleeps.
 In a clone of the repository, run the following command:
 
 ```
-scripts/release-agent/install-macos.sh --repo GITHUB_USER/Markpad
+scripts/release-agent/install-macos.sh --repo morris-labs/Markpad
 ```
-
-Replace `GITHUB_USER` with the GitHub account that owns the repository.
 
 The installer copies the agent to the
 `~/Library/Application Support/MarkpadReleaseAgent` folder and registers a
@@ -153,10 +151,8 @@ To remove the agent, run `scripts/release-agent/install-macos.sh --uninstall`.
 In PowerShell, in a clone of the repository, run the following command:
 
 ```
-powershell -ExecutionPolicy Bypass -File scripts\release-agent\Install-MarkpadReleaseAgent.ps1 -Repo GITHUB_USER/Markpad
+powershell -ExecutionPolicy Bypass -File scripts\release-agent\Install-MarkpadReleaseAgent.ps1 -Repo morris-labs/Markpad
 ```
-
-Replace `GITHUB_USER` with the GitHub account that owns the repository.
 
 The installer copies the agent to the `%LOCALAPPDATA%\MarkpadReleaseAgent`
 folder and registers the **Markpad release agent** scheduled task. The task
@@ -165,7 +161,7 @@ sign out. The agent logs its builds to the `agent.log` file in the same
 folder.
 
 To remove the agent, run the installer with `-Uninstall` in place of
-`-Repo GITHUB_USER/Markpad`.
+`-Repo morris-labs/Markpad`.
 
 ### Publish a release
 
@@ -187,9 +183,9 @@ macOS installers appear on the release when their builds finish.
 
 To build a release again on one machine, run the agent by hand with
 `--force` (macOS) or `-Force` (Windows). On macOS, run
-`~/Library/Application\ Support/MarkpadReleaseAgent/markpad-release-agent.sh --repo GITHUB_USER/Markpad --force`.
+`~/Library/Application\ Support/MarkpadReleaseAgent/markpad-release-agent.sh --repo morris-labs/Markpad --force`.
 On Windows, run
-`powershell -ExecutionPolicy Bypass -File %LOCALAPPDATA%\MarkpadReleaseAgent\MarkpadReleaseAgent.ps1 -Repo GITHUB_USER/Markpad -Force`.
+`powershell -ExecutionPolicy Bypass -File %LOCALAPPDATA%\MarkpadReleaseAgent\MarkpadReleaseAgent.ps1 -Repo morris-labs/Markpad -Force`.
 
 ## The mpd command
 

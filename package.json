@@ -1,16 +1,16 @@
 {
   "name": "markpad",
   "productName": "Markpad",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A lightweight WYSIWYG Markdown editor",
   "main": "out/main/index.js",
   "homepage": "https://example.com/markpad",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GITHUB_USER/Markpad.git"
+    "url": "git+https://github.com/morris-labs/Markpad.git"
   },
   "bugs": {
-    "url": "https://github.com/GITHUB_USER/Markpad/issues"
+    "url": "https://github.com/morris-labs/Markpad/issues"
   },
   "license": "MIT",
   "private": true,

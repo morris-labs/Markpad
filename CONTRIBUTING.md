@@ -9,7 +9,7 @@ Install Node.js 24 or later, then clone the repository and install the
 dependencies:
 
 ```
-git clone https://github.com/GITHUB_USER/Markpad.git
+git clone https://github.com/morris-labs/Markpad.git
 cd Markpad
 npm install
 ```
