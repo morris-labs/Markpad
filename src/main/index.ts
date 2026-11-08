@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { CloseGuard } from './closeGuard';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import {
@@ -44,6 +45,12 @@ const MARKDOWN_FILTERS = [
 let mainWindow: BrowserWindow | null = null;
 let rendererReady = false;
 let closeConfirmed = false;
+const CLOSE_TIMEOUT_MS = 10_000;
+// Closes the window when the renderer hangs and never sends `app:closeReady`.
+const closeGuard = new CloseGuard(CLOSE_TIMEOUT_MS, () => {
+  closeConfirmed = true;
+  mainWindow?.close();
+});
 const pendingOpenPaths: string[] = [];
 
 const settings = new Settings(app.getPath('userData'));
@@ -137,8 +144,15 @@ function createWindow(): BrowserWindow {
     if (closeConfirmed || !rendererReady) return;
     event.preventDefault();
     win.webContents.send('app:beforeClose');
+    closeGuard.arm();
+  });
+  // A crashed renderer can't reply, so close without waiting for it.
+  win.webContents.on('render-process-gone', () => {
+    rendererReady = false;
+    closeGuard.disarm();
   });
   win.on('closed', () => {
+    closeGuard.disarm();
     mainWindow = null;
     rendererReady = false;
     closeConfirmed = false;
@@ -289,6 +303,7 @@ function registerIpc(): void {
   });
 
   ipcMain.on('app:closeReady', () => {
+    closeGuard.disarm();
     closeConfirmed = true;
     mainWindow?.close();
   });
