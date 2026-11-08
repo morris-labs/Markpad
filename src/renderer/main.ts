@@ -1,6 +1,5 @@
 import type { ThemeSetting } from '@shared/api';
 import { App } from './app';
-import { installBrowserStub } from './browserStub';
 import './styles/tokens.css';
 import './styles/app.css';
 import './styles/document.css';
@@ -8,7 +7,10 @@ import './styles/toolbar.css';
 import './styles/syntax.css';
 
 // Outside Electron, as in the browser preview, use an in-memory stand-in.
-if (!('markpad' in window)) installBrowserStub();
+// Only development builds include it; Vite drops this branch from release builds.
+if (import.meta.env.DEV && !('markpad' in window)) {
+  (await import('./browserStub')).installBrowserStub();
+}
 
 function requireElement(id: string): HTMLElement {
   const element = document.getElementById(id);
