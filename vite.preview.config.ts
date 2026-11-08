@@ -6,6 +6,6 @@ import { devServerOptions } from './devServer';
 export default defineConfig({
   root: 'src/renderer',
   resolve: { alias: { '@shared': resolve('src/shared') } },
-  // The preview exists to be opened from the host, so it listens on every interface.
-  server: { ...devServerOptions(), host: process.env['MARKPAD_DEV_HOST'] || '0.0.0.0' },
+  // Binds to loopback unless MARKPAD_DEV_HOST names another address.
+  server: devServerOptions(),
 });
