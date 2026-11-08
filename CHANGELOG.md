@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.5.1 (2026-11-08)
 
 - Multiple cursors, as in Sublime Text, in the styled, source, and code
   views. Typing, deleting, moving, copying, pasting, and formatting act at
@@ -8,6 +8,9 @@
 - Unsaved edits survive a restart. When a save fails, closing the window
   keeps the edits in a backup and restores them on the next launch.
   Closing a tab whose save failed asks whether to save it elsewhere.
+- Fixes for session saves that could overlap and lose unsaved text, for
+  the find bar after a tab closes or reloads, and for the Windows `PATH`
+  edit that the `mpd` command installer makes.
 
 ## 2.0.0 (2026-11-08)
 

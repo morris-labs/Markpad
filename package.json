@@ -1,7 +1,7 @@
 {
   "name": "markpad",
   "productName": "Markpad",
-  "version": "2.0.0",
+  "version": "2.5.1",
   "description": "A lightweight WYSIWYG Markdown editor",
   "main": "out/main/index.js",
   "homepage": "https://example.com/markpad",
