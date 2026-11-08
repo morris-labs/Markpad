@@ -107,7 +107,7 @@ export class FindBar {
   /** Points the open bar at another editor, as when the active tab changes. */
   attach(view: EditorView | null): void {
     if (!this.isOpen || view === this.view) return;
-    if (this.view) clearSearch(this.view);
+    if (this.view && !this.view.isDestroyed) clearSearch(this.view);
     this.view = view;
     if (view) this.search();
     else this.close();

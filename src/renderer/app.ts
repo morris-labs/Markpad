@@ -20,6 +20,10 @@ import { dirName, DocumentTab, type TabHost, type TabSource } from './documentTa
 export class App implements TabHost {
   private readonly tabs: DocumentTab[] = [];
   private active: DocumentTab | null = null;
+  /** True while `start` restores tabs, so a partial session is never saved. */
+  private restoring = false;
+  /** The last queued session save; each save waits for the one before it. */
+  private sessionSaves: Promise<void> = Promise.resolve();
 
   private readonly toolbar: Toolbar;
   private readonly contextBar: ContextBar;
@@ -84,11 +88,17 @@ export class App implements TabHost {
     api.onBeforeClose(() => this.flushAll());
 
     const { session, openPaths } = await api.getStartupState();
-    for (const entry of session.tabs) {
-      await this.restoreTab(entry);
+    this.restoring = true;
+    try {
+      for (const entry of session.tabs) {
+        await this.restoreTab(entry);
+      }
+    } finally {
+      this.restoring = false;
     }
     const restoredActive = this.tabs[session.activeIndex];
     if (restoredActive) this.activate(restoredActive);
+    else void this.saveSession();
     await this.openPaths(openPaths);
     if (this.tabs.length === 0) await this.newDraft();
   }
@@ -99,7 +109,11 @@ export class App implements TabHost {
 
   onTabChanged(tab: DocumentTab): void {
     this.renderTabBar();
-    if (tab === this.active) this.renderChrome();
+    if (tab === this.active) {
+      this.renderChrome();
+      // A reload remounts the editor, so the find bar must follow the new view.
+      this.refreshActiveChrome();
+    }
   }
 
   onSaveError(tab: DocumentTab, error: unknown): void {
@@ -588,12 +602,23 @@ export class App implements TabHost {
     }
   }
 
-  private async saveSession(): Promise<void> {
-    const activeIndex = this.active ? this.tabs.indexOf(this.active) : 0;
-    await window.markpad.saveSession({
-      tabs: this.tabs.map((tab) => tab.sessionEntry),
-      activeIndex: Math.max(activeIndex, 0),
-    });
+  /**
+   * Saves the session after every earlier save settles. The snapshot is taken
+   * when the save runs, so the last save always holds the newest state. A save
+   * during restore is skipped because the tab list is still partial.
+   */
+  private saveSession(): Promise<void> {
+    if (this.restoring) return Promise.resolve();
+    const run = async (): Promise<void> => {
+      const activeIndex = this.active ? this.tabs.indexOf(this.active) : 0;
+      await window.markpad.saveSession({
+        tabs: this.tabs.map((tab) => tab.sessionEntry),
+        activeIndex: Math.max(activeIndex, 0),
+      });
+    };
+    const result = this.sessionSaves.then(run, run);
+    this.sessionSaves = result.catch(() => undefined);
+    return result;
   }
 
   private renderTabBar(): void {
