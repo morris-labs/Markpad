@@ -9,6 +9,7 @@ import {
   selectAllMatches,
   selectNextMatch,
   setRanges,
+  charStep,
   wordBoundary,
 } from '../../src/renderer/editor/multiCursor';
 
@@ -105,5 +106,19 @@ describe('wordBoundary', () => {
     expect(wordBoundary(state.doc, 1, 1)).toBe(6);
     expect(wordBoundary(state.doc, 6, 1)).toBe(11);
     expect(wordBoundary(state.doc, 11, -1)).toBe(7);
+  });
+});
+
+describe('surrogate pairs', () => {
+  it('steps over an emoji as one character', () => {
+    const state = stateOf('a😀b');
+    expect(charStep(state.doc, 2, 1)).toBe(4);
+    expect(charStep(state.doc, 4, -1)).toBe(2);
+  });
+
+  it('moves word boundaries outside an emoji', () => {
+    const state = stateOf('😀😀');
+    expect(wordBoundary(state.doc, 1, 1) % 2).toBe(1);
+    expect(wordBoundary(state.doc, 3, -1) % 2).toBe(1);
   });
 });

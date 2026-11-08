@@ -223,15 +223,25 @@ export function wordBoundary(doc: Node, pos: number, dir: -1 | 1): number {
   while (inRange(i) && /\s/u.test(at(i))) i += dir;
   const isWord = WORD.test(at(i));
   while (inRange(i) && !/\s/u.test(at(i)) && WORD.test(at(i)) === isWord) i += dir;
-  return start + i;
+  return start + snapToPair(text, i, dir);
+}
+
+/** Moves an offset out of the middle of a UTF-16 surrogate pair, in a direction. */
+function snapToPair(text: string, i: number, dir: -1 | 1): number {
+  const high = text.charCodeAt(i - 1);
+  const low = text.charCodeAt(i);
+  return high >= 0xd800 && high <= 0xdbff && low >= 0xdc00 && low <= 0xdfff ? i + dir : i;
 }
 
 /** Moves one character, crossing into the next text block at a block edge. */
 export function charStep(doc: Node, pos: number, dir: -1 | 1): number {
   const $pos = doc.resolve(pos);
   if ($pos.parent.isTextblock) {
-    if (dir < 0 && pos > $pos.start()) return pos - 1;
-    if (dir > 0 && pos < $pos.end()) return pos + 1;
+    const inside = (dir < 0 && pos > $pos.start()) || (dir > 0 && pos < $pos.end());
+    if (inside) {
+      const text = doc.textBetween($pos.start(), $pos.end(), undefined, '￼');
+      return $pos.start() + snapToPair(text, pos - $pos.start() + dir, dir);
+    }
   }
   const next = pos + dir;
   if (next < 0 || next > doc.content.size) return pos;
@@ -413,12 +423,12 @@ function handleKey(view: EditorView, event: KeyboardEvent): boolean {
     case 'Backspace':
       return run(
         view,
-        deleteAll(state, (doc, pos) => (word ? wordBoundary(doc, pos, -1) : pos - 1)),
+        deleteAll(state, (doc, pos) => (word ? wordBoundary(doc, pos, -1) : charStep(doc, pos, -1))),
       );
     case 'Delete':
       return run(
         view,
-        deleteAll(state, (doc, pos) => (word ? wordBoundary(doc, pos, 1) : pos + 1)),
+        deleteAll(state, (doc, pos) => (word ? wordBoundary(doc, pos, 1) : charStep(doc, pos, 1))),
       );
     case 'Tab':
       return run(view, insertAll(state, '\t'));
