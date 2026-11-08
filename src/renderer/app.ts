@@ -297,7 +297,12 @@ export class App implements TabHost {
     const results = await Promise.all(this.tabs.map((tab) => tab.flush()));
     const failed = this.tabs.filter((_, i) => !results[i]);
     if (failed.length > 0 && !(await this.confirmDiscard(failed))) return false;
-    await this.saveSession();
+    // Every tab is already saved, so a failed session write must not block closing.
+    try {
+      await this.saveSession();
+    } catch (error) {
+      console.error('Saving the session before close failed:', error);
+    }
     return true;
   }
 
