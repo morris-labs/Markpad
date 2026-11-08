@@ -1,6 +1,8 @@
 import { Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import type { TabMenuAction } from '@shared/api';
 
 const MAX_SUGGESTIONS = 6;
+const DISMISS_DELAY_MS = 200;
 
 /** Shows spelling suggestions and the clipboard actions on right-click. */
 export function installContextMenu(win: BrowserWindow): void {
@@ -48,5 +50,32 @@ export function installContextMenu(win: BrowserWindow): void {
       items.push({ role: 'copy' });
     }
     if (items.length > 0) Menu.buildFromTemplate(items).popup({ window: win });
+  });
+}
+
+/** Shows the menu for a tab and resolves with the chosen command, or null if dismissed. */
+export function showTabMenu(
+  win: BrowserWindow,
+  enabled: readonly TabMenuAction[],
+): Promise<TabMenuAction | null> {
+  return new Promise((done) => {
+    const item = (label: string, action: TabMenuAction): MenuItemConstructorOptions => ({
+      label,
+      enabled: enabled.includes(action),
+      click: () => done(action),
+    });
+    Menu.buildFromTemplate([
+      item('Close', 'close'),
+      item('Close others', 'close-others'),
+      item('Close to the left', 'close-left'),
+      item('Close to the right', 'close-right'),
+      { type: 'separator' },
+      item('Close unchanged', 'close-unchanged'),
+      item('Close all', 'close-all'),
+    ]).popup({
+      window: win,
+      // On some platforms, the menu reports closing before it reports the click.
+      callback: () => setTimeout(() => done(null), DISMISS_DELAY_MS),
+    });
   });
 }

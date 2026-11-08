@@ -50,6 +50,7 @@ export function installMenu(
       submenu: [
         action('New', 'new', 'CmdOrCtrl+N'),
         action('Open...', 'open', 'CmdOrCtrl+O'),
+        action('Open path...', 'open-path', 'CmdOrCtrl+L'),
         { label: 'Open recent', submenu: recentItems },
         { type: 'separator' },
         action('Save as...', 'save-as', 'CmdOrCtrl+Shift+S'),
@@ -111,8 +112,8 @@ export function installMenu(
       label: '&Help',
       role: 'help',
       submenu: [
-        { label: "Install 'mdv' command", click: handlers.installCommand },
-        { label: "Remove 'mdv' command", click: handlers.uninstallCommand },
+        { label: "Install 'mpd' command", click: handlers.installCommand },
+        { label: "Remove 'mpd' command", click: handlers.uninstallCommand },
       ],
     },
   ];

@@ -3,7 +3,7 @@ import type { SessionTab } from '@shared/api';
 import { imagePlugin, refreshImages } from './editor/images';
 import { linkClickPlugin } from './editor/linkClicks';
 import { MarkdownDocument } from './editor/markdownDocument';
-import { SourceEditor } from './sourceEditor';
+import { languageName, SourceEditor } from './sourceEditor';
 
 const AUTOSAVE_DELAY_MS = 1000;
 
@@ -30,6 +30,13 @@ export function baseName(path: string): string {
   return path.split(/[\\/]/).pop() ?? path;
 }
 
+const MARKDOWN_EXTENSIONS = /\.(md|markdown|mdown|mkd|mkdn|mdx)$/i;
+
+/** Checks whether a path names a Markdown file, which opens in the styled view. */
+export function isMarkdownPath(path: string): boolean {
+  return MARKDOWN_EXTENSIONS.test(path);
+}
+
 /** Gets the folder part of a path on any platform. */
 export function dirName(path: string): string {
   const index = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
@@ -52,6 +59,8 @@ export class DocumentTab {
   private savedText: string;
   /** True if the document has changed since it was last written. */
   private edited = false;
+  /** True if the user has edited the document since this tab opened it. */
+  private touched = false;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
   private saving: Promise<void> = Promise.resolve();
 
@@ -88,11 +97,27 @@ export class DocumentTab {
   /** Creates a tab and mounts its editor. */
   static async create(source: TabSource, text: string, host: TabHost): Promise<DocumentTab> {
     const tab = new DocumentTab(source, text, host);
-    await tab.mount(text);
+    if (tab.isPlainFile) tab.mountPlain(text);
+    else await tab.mount(text);
     return tab;
   }
 
-  /** Checks whether the tab's editor has finished mounting. */
+  /**
+   * Checks whether the tab holds a file that isn't Markdown, such as a text or
+   * code file. Such a file always shows as plain text, never in the styled view.
+   */
+  get isPlainFile(): boolean {
+    return this.source.kind === 'file' && !isMarkdownPath(this.source.path);
+  }
+
+  /** Gets the language of a plain file, such as `JSON`, or `Plain text`. */
+  get fileKind(): string {
+    return this.source.kind === 'file'
+      ? (languageName(baseName(this.source.path)) ?? 'Plain text')
+      : 'Markdown';
+  }
+
+  /** Checks whether the tab's styled editor has finished mounting. */
   get isMounted(): boolean {
     return this.documentValue !== null;
   }
@@ -113,6 +138,11 @@ export class DocumentTab {
   /** Checks whether an edit is waiting to be written. */
   get hasPendingSave(): boolean {
     return this.edited;
+  }
+
+  /** Checks whether closing the tab loses no work: it's unedited and has no draft text. */
+  get isUnchanged(): boolean {
+    return !this.touched && (this.source.kind === 'file' || this.isEmpty);
   }
 
   get isEmpty(): boolean {
@@ -141,6 +171,7 @@ export class DocumentTab {
    * history starts over.
    */
   async toggleSourceMode(): Promise<void> {
+    if (this.isPlainFile) return;
     if (this.sourceView) {
       const text = this.sourceView.text;
       this.sourceView.destroy();
@@ -194,11 +225,16 @@ export class DocumentTab {
     return text !== this.savedText;
   }
 
-  /** Writes pending edits now. */
-  async flush(): Promise<void> {
+  /**
+   * Writes pending edits now.
+   *
+   * @returns False if the write failed and the edits are still unsaved; otherwise true.
+   */
+  async flush(): Promise<boolean> {
     clearTimeout(this.saveTimer);
     this.saving = this.saving.then(() => this.writeIfEdited());
     await this.saving;
+    return !this.edited;
   }
 
   /** Copies an image file into this document's assets folder and returns its relative path. */
@@ -266,19 +302,30 @@ export class DocumentTab {
     this.syncFrontMatterPanel();
   }
 
+  /** Shows a text or code file in the source editor, with its syntax highlighting. */
+  private mountPlain(text: string): void {
+    this.editorHost.hidden = true;
+    this.frontMatterPanel.hidden = true;
+    this.sourceHost.hidden = false;
+    this.sourceView = new SourceEditor(this.sourceHost, text, () => this.markEdited(), {
+      fileName: baseName(this.source.path),
+    });
+  }
+
   private syncFrontMatterPanel(): void {
     this.frontMatterPanel.hidden = this.document.frontMatter === null;
   }
 
   private markEdited(): void {
     this.edited = true;
+    this.touched = true;
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => void this.flush(), AUTOSAVE_DELAY_MS);
     this.host.onTabChanged(this);
   }
 
   private async writeIfEdited(): Promise<void> {
-    if (!this.edited || !this.documentValue) return;
+    if (!this.edited || !(this.documentValue || this.sourceView)) return;
     this.edited = false;
     const text = this.currentText();
     if (text !== this.savedText) {

@@ -2,7 +2,40 @@
 
 Markpad is a lightweight desktop editor for Markdown files. It opens a file
 in a styled, editable view, like a small word processor, and saves the file
-as Markdown.
+as Markdown. It runs on Linux, Windows, and macOS.
+
+![Markpad editing a Markdown file](docs/screenshot.png)
+
+## Install
+
+Download Markpad from the
+[latest release](https://github.com/morris-labs/Markpad/releases/latest).
+
+- **Debian, Ubuntu, and other Debian-based Linux**: Download the
+  `markpad_VERSION_amd64.deb` file and install it:
+
+  ```
+  sudo apt install ./markpad_VERSION_amd64.deb
+  ```
+
+  Replace `VERSION` with the version you downloaded, such as `2.0.0`.
+
+- **Other Linux distributions**: Download the `Markpad-VERSION.AppImage`
+  file, make it executable with `chmod +x Markpad-VERSION.AppImage`, and
+  run it.
+
+- **Windows**: Download and run the `Markpad-Setup-VERSION.exe` installer.
+
+- **macOS**: Download the `Markpad-VERSION-arm64.dmg` disk image for Apple
+  silicon or `Markpad-VERSION-x64.dmg` for Intel, open it, and drag
+  **Markpad** to the **Applications** folder.
+
+If a release doesn't list an installer for your system yet, you can build
+one from source. For instructions, see [Build Markpad installers](BUILDING.md).
+The installers aren't code-signed, so Windows and macOS warn the first time
+you open Markpad; that guide also explains how to open it anyway.
+
+Markpad doesn't update itself. To update, install the newer release.
 
 ## Features
 
@@ -35,21 +68,21 @@ as Markdown.
 
 ## Open files from a terminal
 
-The `mdv` command opens files in Markpad, the way `subl` does for Sublime
+The `mpd` command opens files in Markpad, the way `subl` does for Sublime
 Text. Each file opens as a tab in the running window, and the command
 returns to the prompt right away:
 
 ```
-mdv notes.md docs/plan.md
+mpd notes.md docs/plan.md
 ```
 
 A file that doesn't exist opens as an empty document, and Markpad creates
-it when you type. Run `mdv --help` for the options.
+it when you type. Run `mpd --help` for the options.
 
 To set up the command, do one of the following:
 
-- **Debian package**: Installing the `.deb` package adds `/usr/bin/mdv`.
-- **AppImage, macOS, or Windows**: Click **Help > Install 'mdv' command**.
+- **Debian package**: Installing the `.deb` package adds `/usr/bin/mpd`.
+- **AppImage, macOS, or Windows**: Click **Help > Install 'mpd' command**.
   - On Linux, the command goes in the `~/.local/bin` folder, which must be
     on your PATH.
   - On macOS, it goes in the `/usr/local/bin` folder; macOS asks for your
@@ -57,7 +90,10 @@ To set up the command, do one of the following:
   - On Windows, it goes in `%LOCALAPPDATA%\Markpad\bin`, and Markpad adds
     that folder to your user PATH. Open a new terminal to use it.
 
-To remove the command, click **Help > Remove 'mdv' command**, or uninstall
+Music Player Daemon also installs a command named `mpd`. If it's already at
+the install location, Markpad leaves it in place and doesn't install its own.
+
+To remove the command, click **Help > Remove 'mpd' command**, or uninstall
 the Debian package.
 
 ## Keyboard shortcuts
@@ -68,8 +104,9 @@ On macOS, use Cmd in place of Ctrl.
 |----------------------|------------------|
 | New document         | Ctrl+N           |
 | Open                 | Ctrl+O           |
+| Open a pasted path   | Ctrl+L           |
 | Save as              | Ctrl+Shift+S     |
-| Close tab            | Ctrl+W           |
+| Close tab, or the app if no document is open | Ctrl+W |
 | Next or previous tab | Ctrl+Tab, Ctrl+Shift+Tab |
 | Bold, italic         | Ctrl+B, Ctrl+I   |
 | Inline code          | Ctrl+E           |
@@ -82,7 +119,23 @@ On macOS, use Cmd in place of Ctrl.
 | Markdown source      | Ctrl+/           |
 | Outline              | Ctrl+Shift+O     |
 
+## Known limitations
+
+- Save As to another folder doesn't copy the document's images, so
+  relative image paths can break. Untitled documents move their images
+  correctly when you first save them.
+- Raw HTML in a Markdown file shows as text, not as rendered HTML.
+- Switching out of the Markdown source view clears the undo history.
+- Very large files, with thousands of paragraphs, are slower to open.
+- The installers aren't code-signed, so Windows SmartScreen and macOS
+  Gatekeeper warn the first time you open Markpad.
+
 ## Build and develop
 
-For development commands, see the `CLAUDE.md` file. For installers, see
+To set up a development environment and run the tests, see
+[Contribute to Markpad](CONTRIBUTING.md). To build installers, see
 [Build Markpad installers](BUILDING.md).
+
+## License
+
+Markpad is released under the [MIT License](LICENSE).

@@ -44,6 +44,18 @@ export function installBrowserStub(): void {
     showSaveDialog: async (name) => window.prompt('Save as', `/preview/${name.split('/').pop()}`),
     ask: async (options) =>
       window.confirm(options.message) ? (options.defaultId ?? 0) : (options.cancelId ?? 0),
+    resolvePastedPaths: async (text) => {
+      const lines = text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      return {
+        found: lines.filter((line) => files.has(line)),
+        notFound: lines.filter((line) => !files.has(line)),
+      };
+    },
+    showTabMenu: async () => null,
+    closeWindow: async () => {},
     showOpenImageDialog: async () => null,
     importImageFile: async () => {
       throw new Error('The browser preview has no file system.');

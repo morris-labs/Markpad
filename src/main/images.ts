@@ -4,6 +4,7 @@ import { dirname, extname, join, parse } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { net, protocol } from 'electron';
 import { ASSETS_DIR } from './drafts';
+import { imagePathFromUrl } from './imageUrl';
 
 export const IMAGE_SCHEME = 'mdimg';
 
@@ -43,8 +44,8 @@ export function registerImageSchemePrivileges(): void {
  */
 export function handleImageScheme(): void {
   protocol.handle(IMAGE_SCHEME, async (request) => {
-    const url = new URL(request.url);
-    const path = decodeURIComponent(url.pathname.slice(1));
+    const path = imagePathFromUrl(request.url);
+    if (path === null) return new Response('Bad request', { status: 400 });
     const type = IMAGE_TYPES[extname(path).toLowerCase()];
     if (!type) return new Response('Not an image', { status: 403 });
     const response = await net.fetch(pathToFileURL(path).toString()).catch(() => null);

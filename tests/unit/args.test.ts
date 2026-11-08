@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { editPathList, parseFileArgs, type PathChecks } from '../../src/main/args';
+import {
+  editPathList,
+  parseFileArgs,
+  resolvePastedPaths,
+  type PathChecks,
+} from '../../src/main/args';
 
 const files = new Set(['/work/notes.md', '/work/-dash.md', '/work/sub/a.md']);
 const folders = new Set(['/', '/work', '/work/sub']);
@@ -47,5 +52,34 @@ describe('editPathList', () => {
 
   it('drops empty entries and compares with case on POSIX', () => {
     expect(editPathList('/a::/B', '/b', true, ':', false)).toBe('/a:/B:/b');
+  });
+});
+
+describe('resolvePastedPaths', () => {
+  const files = new Set(['/home/alex/a b.md', '/docs/c.md']);
+  const checks = {
+    exists: (path: string) => files.has(path) || path === '/docs',
+    isDirectory: (path: string) => path === '/docs',
+  };
+  const resolvePasted = (text: string) =>
+    resolvePastedPaths(text, '/docs', '/home/alex', checks, false);
+
+  it.each([
+    ['/docs/c.md', '/docs/c.md'],
+    ['  "/docs/c.md"  ', '/docs/c.md'],
+    ["'/docs/c.md'", '/docs/c.md'],
+    ['c.md', '/docs/c.md'],
+    ['file:///docs/c.md', '/docs/c.md'],
+    ['~/a b.md', '/home/alex/a b.md'],
+    ['~/a\\ b.md', '/home/alex/a b.md'],
+  ])('finds the file in %s', (text, path) => {
+    expect(resolvePasted(text)).toEqual({ found: [path], notFound: [] });
+  });
+
+  it('handles several lines and reports the ones without a file', () => {
+    expect(resolvePasted('/docs/c.md\r\n\r\n/docs\n/docs/c.md\nnope.md')).toEqual({
+      found: ['/docs/c.md'],
+      notFound: ['/docs', 'nope.md'],
+    });
   });
 });

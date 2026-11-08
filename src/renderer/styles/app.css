@@ -223,3 +223,36 @@ textarea {
   padding: 4px 8px;
   color: var(--text-muted);
 }
+
+.open-path-dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.open-path-dialog label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.open-path-dialog input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono-font);
+}
+
+.open-path-error {
+  margin: 6px 0 0;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}

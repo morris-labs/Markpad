@@ -46,6 +46,7 @@ export type ThemeSetting = 'system' | 'light' | 'dark';
 export type MenuAction =
   | 'new'
   | 'open'
+  | 'open-path'
   | 'save-as'
   | 'close-tab'
   | 'next-tab'
@@ -61,6 +62,10 @@ export type MenuAction =
   | 'print'
   | 'export-html'
   | 'export-pdf';
+
+/** Commands in the menu that opens when you right-click a tab. */
+export type TabMenuAction =
+  'close' | 'close-others' | 'close-left' | 'close-right' | 'close-unchanged' | 'close-all';
 
 /** A choice the user makes in a message box, by button index. */
 export interface AskOptions {
@@ -83,6 +88,25 @@ export interface MarkpadApi {
   /** Shows a save dialog and returns the chosen path, or null if canceled. */
   showSaveDialog(suggestedName: string): Promise<string | null>;
   ask(options: AskOptions): Promise<number>;
+  /**
+   * Finds the files named in pasted text, one path per line.
+   *
+   * @param baseFolder The folder that relative paths resolve against, or null for
+   *     the home folder.
+   */
+  resolvePastedPaths(
+    text: string,
+    baseFolder: string | null,
+  ): Promise<{ readonly found: readonly string[]; readonly notFound: readonly string[] }>;
+  /**
+   * Shows the tab menu at the pointer.
+   *
+   * @param enabled The commands that apply to the tab; the others appear dimmed.
+   * @returns The chosen command, or null if the user dismissed the menu.
+   */
+  showTabMenu(enabled: readonly TabMenuAction[]): Promise<TabMenuAction | null>;
+  /** Closes the window, which flushes pending saves first. */
+  closeWindow(): Promise<void>;
 
   /** Shows an image picker and returns the chosen path, or null if canceled. */
   showOpenImageDialog(): Promise<string | null>;
@@ -138,6 +162,9 @@ export interface MarkpadApi {
   getTheme(): Promise<ThemeSetting>;
   /** Registers a listener for changes to the theme setting in the View menu. */
   onThemeChanged(listener: (theme: ThemeSetting) => void): void;
-  /** Registers the handler that flushes pending saves before the window closes. */
-  onBeforeClose(handler: () => Promise<void>): void;
+  /**
+   * Registers the handler that flushes pending saves before the window closes.
+   * The window stays open if the handler resolves to false.
+   */
+  onBeforeClose(handler: () => Promise<boolean>): void;
 }

@@ -1,4 +1,6 @@
 import { readFile } from 'node:fs/promises';
+import { CloseGuard } from './closeGuard';
+import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import {
   app,
@@ -10,11 +12,18 @@ import {
   nativeTheme,
   shell,
 } from 'electron';
-import type { AskOptions, MenuAction, Session, StartupState, ThemeSetting } from '@shared/api';
+import type {
+  AskOptions,
+  MenuAction,
+  Session,
+  StartupState,
+  TabMenuAction,
+  ThemeSetting,
+} from '@shared/api';
 import icon from '../../resources/icon.png?asset';
-import { parseFileArgs } from './args';
+import { parseFileArgs, resolvePastedPaths } from './args';
 import { installCommand, uninstallCommand, type CommandResult } from './cliInstaller';
-import { installContextMenu } from './contextMenu';
+import { installContextMenu, showTabMenu } from './contextMenu';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
 import {
@@ -36,6 +45,12 @@ const MARKDOWN_FILTERS = [
 let mainWindow: BrowserWindow | null = null;
 let rendererReady = false;
 let closeConfirmed = false;
+const CLOSE_TIMEOUT_MS = 10_000;
+// Closes the window when the renderer hangs and never sends `app:closeReady`.
+const closeGuard = new CloseGuard(CLOSE_TIMEOUT_MS, () => {
+  closeConfirmed = true;
+  mainWindow?.close();
+});
 const pendingOpenPaths: string[] = [];
 
 const settings = new Settings(app.getPath('userData'));
@@ -79,7 +94,7 @@ function refreshMenu(): void {
   );
 }
 
-/** Runs the mdv installer or remover and shows what happened. */
+/** Runs the mpd installer or remover and shows what happened. */
 async function reportCommandResult(action: () => Promise<CommandResult>): Promise<void> {
   let result: CommandResult;
   let type: 'info' | 'error' = 'info';
@@ -88,7 +103,7 @@ async function reportCommandResult(action: () => Promise<CommandResult>): Promis
   } catch (error) {
     type = 'error';
     result = {
-      message: "Markpad couldn't change the 'mdv' command.",
+      message: "Markpad couldn't change the 'mpd' command.",
       detail: error instanceof Error ? error.message : String(error),
     };
   }
@@ -129,8 +144,15 @@ function createWindow(): BrowserWindow {
     if (closeConfirmed || !rendererReady) return;
     event.preventDefault();
     win.webContents.send('app:beforeClose');
+    closeGuard.arm();
+  });
+  // A crashed renderer can't reply, so close without waiting for it.
+  win.webContents.on('render-process-gone', () => {
+    rendererReady = false;
+    closeGuard.disarm();
   });
   win.on('closed', () => {
+    closeGuard.disarm();
     mainWindow = null;
     rendererReady = false;
     closeConfirmed = false;
@@ -195,6 +217,14 @@ function registerIpc(): void {
     });
     return result.response;
   });
+
+  ipcMain.handle('file:resolvePasted', (_event, text: string, baseFolder: string | null) =>
+    resolvePastedPaths(text, baseFolder ?? homedir(), homedir()),
+  );
+  ipcMain.handle('menu:tab', async (_event, enabled: readonly TabMenuAction[]) =>
+    mainWindow ? showTabMenu(mainWindow, enabled) : null,
+  );
+  ipcMain.handle('window:close', () => mainWindow?.close());
 
   ipcMain.handle('dialog:openImage', async () => {
     if (!mainWindow) return null;
@@ -273,12 +303,13 @@ function registerIpc(): void {
   });
 
   ipcMain.on('app:closeReady', () => {
+    closeGuard.disarm();
     closeConfirmed = true;
     mainWindow?.close();
   });
 }
 
-// `markpad --version` prints the version for the mdv command, then exits.
+// `markpad --version` prints the version for the mpd command, then exits.
 const versionRequested = process.argv
   .slice(app.isPackaged ? 1 : 2)
   .some((arg) => arg === '--version' || arg === '-v');

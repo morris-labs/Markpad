@@ -2,7 +2,7 @@ import type { Node } from '@milkdown/kit/prose/model';
 import { Plugin } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { $prose } from '@milkdown/kit/utils';
-import { joinRelative, safeDecode } from './links';
+import { joinRelative, safeDecode, safeDecodeComponent } from './links';
 
 /** Callbacks that connect image handling to the tab's file. */
 export interface ImageHost {
@@ -28,7 +28,7 @@ export function resolveImageSrc(src: string, documentPath: string): string {
   if (/^(https?|data|mdimg):/i.test(src)) return src;
   let path: string;
   if (/^file:/i.test(src)) {
-    path = decodeURIComponent(new URL(src).pathname).replace(/^\/([a-z]:)/i, '$1');
+    path = safeDecodeComponent(new URL(src).pathname).replace(/^\/([a-z]:)/i, '$1');
   } else {
     const decoded = safeDecode(src);
     const isAbsolute = /^([a-z]:[\\/]|[\\/])/i.test(decoded);

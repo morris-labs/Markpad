@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { constants } from 'node:fs';
-import { access, chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, chmod, mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { promisify } from 'node:util';
@@ -9,7 +9,7 @@ import { editPathList } from './args';
 
 const run = promisify(execFile);
 
-/** Where the `mdv` command lives on this platform, and how it reaches the app. */
+/** Where the `mpd` command lives on this platform, and how it reaches the app. */
 interface CommandTarget {
   /** The script file to write. */
   readonly path: string;
@@ -25,7 +25,7 @@ export interface CommandResult {
   readonly detail: string;
 }
 
-/** Gets the executable that `mdv` launches: the AppImage file itself when there is one. */
+/** Gets the executable that `mpd` launches: the AppImage file itself when there is one. */
 function appExecutable(): string {
   return process.env['APPIMAGE'] ?? process.execPath;
 }
@@ -37,13 +37,13 @@ function commandTarget(): CommandTarget {
       'Markpad',
       'bin',
     );
-    return { path: join(folder, 'mdv.cmd'), folder, needsAdmin: false };
+    return { path: join(folder, 'mpd.cmd'), folder, needsAdmin: false };
   }
   if (process.platform === 'darwin') {
-    return { path: '/usr/local/bin/mdv', folder: '/usr/local/bin', needsAdmin: true };
+    return { path: '/usr/local/bin/mpd', folder: '/usr/local/bin', needsAdmin: true };
   }
   const folder = join(homedir(), '.local', 'bin');
-  return { path: join(folder, 'mdv'), folder, needsAdmin: false };
+  return { path: join(folder, 'mpd'), folder, needsAdmin: false };
 }
 
 /** Quotes a value for a POSIX shell single-quoted string. */
@@ -53,7 +53,7 @@ function shellQuote(value: string): string {
 
 /** Builds the script from the template in the app's resources, pointing it at this app. */
 async function scriptText(): Promise<string> {
-  const name = process.platform === 'win32' ? 'mdv.cmd' : 'mdv';
+  const name = process.platform === 'win32' ? 'mpd.cmd' : 'mpd';
   const template = await readFile(join(process.resourcesPath, 'bin', name), 'utf8');
   const exe = appExecutable();
   return process.platform === 'win32'
@@ -83,7 +83,7 @@ async function editWindowsUserPath(folder: string, add: boolean): Promise<void> 
 
 /** Writes a file as an administrator on macOS, through the system password prompt. */
 async function writeAsAdmin(path: string, text: string): Promise<void> {
-  const staged = join(app.getPath('temp'), `mdv-${process.pid}`);
+  const staged = join(app.getPath('temp'), `mpd-${process.pid}`);
   await writeFile(staged, text, { mode: 0o755 });
   const shell = `mkdir -p ${shellQuote('/usr/local/bin')} && cp ${shellQuote(staged)} ${shellQuote(path)} && chmod 755 ${shellQuote(path)}`;
   const script = `do shell script ${JSON.stringify(shell)} with administrator privileges`;
@@ -110,29 +110,44 @@ function onPath(folder: string): boolean {
   );
 }
 
-/** Installs the `mdv` command for the current user. */
+/** Checks whether `path` holds another program, such as Music Player Daemon. */
+async function isForeignFile(path: string): Promise<boolean> {
+  try {
+    return !(await readFile(path, 'utf8')).includes('MARKPAD_APP');
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== 'ENOENT';
+  }
+}
+
+/** Installs the `mpd` command for the current user. */
 export async function installCommand(): Promise<CommandResult> {
   if (!app.isPackaged) {
     return {
-      message: "The 'mdv' command needs an installed copy of Markpad.",
-      detail: 'In development, run the resources/bin/mdv script with MARKPAD_APP set.',
+      message: "The 'mpd' command needs an installed copy of Markpad.",
+      detail: 'In development, run the resources/bin/mpd script with MARKPAD_APP set.',
     };
   }
   if (process.platform === 'linux' && process.env['APPIMAGE'] === undefined) {
-    // The .deb package links /usr/bin/mdv when it installs.
-    const packaged = await access('/usr/bin/mdv').then(
-      () => true,
+    // The .deb package links /usr/bin/mpd when it installs.
+    const packaged = await realpath('/usr/bin/mpd').then(
+      (path) => path === join(process.resourcesPath, 'bin', 'mpd'),
       () => false,
     );
     if (packaged) {
       return {
-        message: "The 'mdv' command is already installed.",
-        detail: 'The Markpad package installed it at /usr/bin/mdv.',
+        message: "The 'mpd' command is already installed.",
+        detail: 'The Markpad package installed it at /usr/bin/mpd.',
       };
     }
   }
 
   const target = commandTarget();
+  if (await isForeignFile(target.path)) {
+    return {
+      message: "Markpad didn't install the 'mpd' command.",
+      detail: `Another program is already at ${target.path}, and Markpad didn't replace it.`,
+    };
+  }
   const text = await scriptText();
   if (target.needsAdmin && !(await canWrite(target.folder))) {
     await writeAsAdmin(target.path, text);
@@ -145,16 +160,16 @@ export async function installCommand(): Promise<CommandResult> {
   let detail = `Markpad installed the command at ${target.path}.`;
   if (process.platform === 'win32') {
     await editWindowsUserPath(target.folder, true);
-    detail += ' Open a new terminal, and then run mdv FILE.';
+    detail += ' Open a new terminal, and then run mpd FILE.';
   } else if (!onPath(target.folder)) {
-    detail += ` Add ${target.folder} to your PATH, open a new terminal, and then run mdv FILE.`;
+    detail += ` Add ${target.folder} to your PATH, open a new terminal, and then run mpd FILE.`;
   } else {
-    detail += ' Run mdv FILE in a terminal to open a file.';
+    detail += ' Run mpd FILE in a terminal to open a file.';
   }
-  return { message: "The 'mdv' command is installed.", detail };
+  return { message: "The 'mpd' command is installed.", detail };
 }
 
-/** Removes the `mdv` command that {@link installCommand} installed. */
+/** Removes the `mpd` command that {@link installCommand} installed. */
 export async function uninstallCommand(): Promise<CommandResult> {
   const target = commandTarget();
   const exists = await access(target.path).then(
@@ -163,11 +178,17 @@ export async function uninstallCommand(): Promise<CommandResult> {
   );
   if (!exists) {
     return {
-      message: "The 'mdv' command isn't installed for your user.",
+      message: "The 'mpd' command isn't installed for your user.",
       detail:
         process.platform === 'linux'
-          ? 'If the Markpad package installed /usr/bin/mdv, uninstalling the package removes it.'
+          ? 'If the Markpad package installed /usr/bin/mpd, uninstalling the package removes it.'
           : `Markpad found nothing at ${target.path}.`,
+    };
+  }
+  if (await isForeignFile(target.path)) {
+    return {
+      message: "Markpad didn't remove the 'mpd' command.",
+      detail: `The file at ${target.path} belongs to another program.`,
     };
   }
   if (target.needsAdmin && !(await canWrite(target.folder))) {
@@ -179,5 +200,5 @@ export async function uninstallCommand(): Promise<CommandResult> {
     await rm(target.path, { force: true });
   }
   if (process.platform === 'win32') await editWindowsUserPath(target.folder, false);
-  return { message: "The 'mdv' command is removed.", detail: `Markpad deleted ${target.path}.` };
+  return { message: "The 'mpd' command is removed.", detail: `Markpad deleted ${target.path}.` };
 }
