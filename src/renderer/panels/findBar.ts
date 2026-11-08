@@ -48,11 +48,13 @@ export class FindBar {
 
     this.replaceInput = this.input('Replace');
     const replaceOne = this.button('Replace', 'Replace this match', () => {
-      if (this.view) replaceCurrent(this.view, this.replaceInput.value);
+      const view = this.liveView();
+      if (view) replaceCurrent(view, this.replaceInput.value);
       this.updateCount();
     });
     const replaceEvery = this.button('All', 'Replace all matches', () => {
-      if (this.view) replaceAll(this.view, this.replaceInput.value);
+      const view = this.liveView();
+      if (view) replaceAll(view, this.replaceInput.value);
       this.updateCount();
     });
     replaceOne.classList.add('text-button');
@@ -107,26 +109,34 @@ export class FindBar {
   /** Points the open bar at another editor, as when the active tab changes. */
   attach(view: EditorView | null): void {
     if (!this.isOpen || view === this.view) return;
-    if (this.view && !this.view.isDestroyed) clearSearch(this.view);
+    const old = this.liveView();
+    if (old) clearSearch(old);
     this.view = view;
     if (view) this.search();
     else this.close();
   }
 
   close(): void {
-    if (this.view) {
-      clearSearch(this.view);
-      this.view.focus();
+    const view = this.liveView();
+    if (view) {
+      clearSearch(view);
+      view.focus();
     }
     this.element.hidden = true;
   }
 
   /** Updates the match count after the document changes. */
   updateCount(): void {
-    if (!this.view || !this.isOpen) return;
-    const { count, index } = searchStatus(this.view.state);
+    const view = this.liveView();
+    if (!view || !this.isOpen) return;
+    const { count, index } = searchStatus(view.state);
     this.count.textContent =
       this.findInput.value === '' ? '' : count === 0 ? 'No results' : `${index} of ${count}`;
+  }
+
+  /** Returns the attached editor, or null when it is missing or destroyed. */
+  private liveView(): EditorView | null {
+    return this.view && !this.view.isDestroyed ? this.view : null;
   }
 
   private query(): SearchQuery {
@@ -138,14 +148,16 @@ export class FindBar {
   }
 
   private search(): void {
-    if (!this.view) return;
-    setSearchQuery(this.view, this.query());
+    const view = this.liveView();
+    if (!view) return;
+    setSearchQuery(view, this.query());
     this.updateCount();
   }
 
   private step(direction: 1 | -1): void {
-    if (!this.view) return;
-    findNext(this.view, direction);
+    const view = this.liveView();
+    if (!view) return;
+    findNext(view, direction);
     this.updateCount();
   }
 

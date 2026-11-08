@@ -19,4 +19,24 @@ describe('FindBar.attach', () => {
     expect((bar as unknown as { view: unknown }).view).toBe(second.editor.view);
     await second.destroy();
   });
+
+  it('ignores handlers and closes cleanly after the view is destroyed', async () => {
+    const bar = new FindBar(document.body);
+    const doc = await open('one cat\n');
+    bar.open(doc.editor.view, true);
+    await doc.destroy();
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.find-bar button'));
+    expect(() => buttons.forEach((button) => button.click())).not.toThrow();
+    expect(() => bar.updateCount()).not.toThrow();
+    expect(bar.isOpen).toBe(false);
+  });
+
+  it('closes without throwing when attached to null after destroy', async () => {
+    const bar = new FindBar(document.body);
+    const doc = await open('one cat\n');
+    bar.open(doc.editor.view, false);
+    await doc.destroy();
+    expect(() => bar.attach(null)).not.toThrow();
+    expect(bar.isOpen).toBe(false);
+  });
 });
