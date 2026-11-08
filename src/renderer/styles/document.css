@@ -275,3 +275,28 @@
   background: #ff9632;
   color: #000;
 }
+
+/* Extra cursors and selections from the multiple cursors plugin. */
+.ProseMirror .mc-caret {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 1em;
+  vertical-align: text-bottom;
+  border-left: 2px solid var(--text);
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  animation: mc-blink 1.1s steps(1) infinite;
+}
+
+.ProseMirror .mc-selection {
+  background: Highlight;
+  color: HighlightText;
+}
+
+@keyframes mc-blink {
+  50% {
+    border-left-color: transparent;
+  }
+}

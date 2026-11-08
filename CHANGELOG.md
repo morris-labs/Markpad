@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Multiple cursors, as in Sublime Text, in the styled, source, and code
+  views. Typing, deleting, moving, copying, pasting, and formatting act at
+  every cursor, and one undo reverts the change.
+- Unsaved edits survive a restart. When a save fails, closing the window
+  keeps the edits in a backup and restores them on the next launch.
+  Closing a tab whose save failed asks whether to save it elsewhere.
+
 ## 2.0.0 (2026-11-08)
 
 The first public release.

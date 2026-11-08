@@ -118,6 +118,12 @@ On macOS, use Cmd in place of Ctrl.
 | Find, replace        | Ctrl+F, Ctrl+H   |
 | Markdown source      | Ctrl+/           |
 | Outline              | Ctrl+Shift+O     |
+| Select the word, then add its next match | Ctrl+D |
+| Select every match   | Alt+F3           |
+| Add a cursor above or below | Alt+Shift+Up, Alt+Shift+Down |
+| Add a cursor         | Alt+click        |
+| Split a selection into lines (source and code views) | Ctrl+Shift+L |
+| Keep only the main cursor | Escape      |
 
 ## Known limitations
 
