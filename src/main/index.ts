@@ -24,6 +24,7 @@ import icon from '../../resources/icon.png?asset';
 import { parseFileArgs, resolvePastedPaths } from './args';
 import { installCommand, uninstallCommand, type CommandResult } from './cliInstaller';
 import { installContextMenu, showTabMenu } from './contextMenu';
+import { BackupStore } from './backups';
 import { DraftStore } from './drafts';
 import { FileWatcher, readText, writeFileAtomic } from './fileStore';
 import {
@@ -36,6 +37,7 @@ import {
 import { exportHtml, exportPdf, printHtml } from './exporter';
 import { installMenu } from './menu';
 import { Settings } from './settings';
+import { SerialQueue } from './serialQueue';
 
 const MARKDOWN_FILTERS = [
   { name: 'Markdown', extensions: ['md', 'markdown', 'mdown', 'mkd', 'txt'] },
@@ -55,6 +57,7 @@ const pendingOpenPaths: string[] = [];
 
 const settings = new Settings(app.getPath('userData'));
 const drafts = new DraftStore(join(app.getPath('userData'), 'drafts'));
+const backups = new BackupStore(join(app.getPath('userData'), 'backups'));
 const watcher = new FileWatcher((path, text) => {
   mainWindow?.webContents.send('file:changed', { path, text });
 });
@@ -175,17 +178,23 @@ function createWindow(): BrowserWindow {
   return win;
 }
 
+/** Orders session saves and draft changes so pruning never sees a half-changed folder. */
+const sessionQueue = new SerialQueue();
+
 function registerIpc(): void {
   ipcMain.handle('session:startup', async (): Promise<StartupState> => {
     rendererReady = true;
     const openPaths = pendingOpenPaths.splice(0);
-    return { session: settings.session, openPaths };
+    return { session: await backups.load(settings.session), openPaths };
   });
   ipcMain.handle('theme:get', () => settings.theme);
   ipcMain.handle('session:save', async (_event, session: Session) => {
-    await settings.setSession(session);
-    const keep = new Set(session.tabs.flatMap((tab) => (tab.kind === 'draft' ? [tab.id] : [])));
-    await drafts.pruneEmpty(keep);
+    // Saves run in arrival order, so a stale save can't overwrite a newer one.
+    await sessionQueue.run(async () => {
+      await settings.setSession(await backups.store(session));
+      const keep = new Set(session.tabs.flatMap((tab) => (tab.kind === 'draft' ? [tab.id] : [])));
+      await drafts.pruneEmpty(keep);
+    });
   });
 
   ipcMain.handle('dialog:open', async () => {
@@ -294,12 +303,12 @@ function registerIpc(): void {
     refreshMenu();
   });
 
-  ipcMain.handle('draft:create', () => drafts.create());
+  ipcMain.handle('draft:create', () => sessionQueue.run(() => drafts.create()));
   ipcMain.handle('draft:read', (_event, id: string) => drafts.read(id));
-  ipcMain.handle('draft:delete', (_event, id: string) => drafts.delete(id));
+  ipcMain.handle('draft:delete', (_event, id: string) => sessionQueue.run(() => drafts.delete(id)));
   ipcMain.handle('draft:promote', async (_event, id: string, path: string, text: string) => {
     watcher.noteWrite(path, text);
-    await drafts.promote(id, path, text);
+    await sessionQueue.run(() => drafts.promote(id, path, text));
   });
 
   ipcMain.on('app:closeReady', () => {

@@ -6,5 +6,6 @@ import { devServerOptions } from './devServer';
 export default defineConfig({
   root: 'src/renderer',
   resolve: { alias: { '@shared': resolve('src/shared') } },
+  // Binds to loopback unless MARKPAD_DEV_HOST names another address.
   server: devServerOptions(),
 });

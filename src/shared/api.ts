@@ -15,9 +15,17 @@ export interface DraftSnapshot {
 }
 
 /** A tab to restore on the next launch. */
-export type SessionTab =
-  | { readonly kind: 'file'; readonly path: string }
-  | { readonly kind: 'draft'; readonly id: string };
+export type SessionTab = (
+  { readonly kind: 'file'; readonly path: string } | { readonly kind: 'draft'; readonly id: string }
+) & {
+  /**
+   * Edits that couldn't be written when the window closed. Markpad keeps them
+   * and restores them as unsaved edits, the way Sublime Text's hot exit does.
+   */
+  readonly unsavedText?: string;
+  /** Main process only: the backup file that holds `unsavedText` on disk. */
+  readonly backup?: string;
+};
 
 /** The open tabs, stored when they change and restored on launch. */
 export interface Session {

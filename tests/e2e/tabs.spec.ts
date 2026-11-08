@@ -117,10 +117,9 @@ test('Open path opens a pasted path and reports one with no file', async () => {
   await closeApp(app);
 });
 
-test('F-0003: closing a tab whose save fails keeps it open unless you discard', async () => {
+test('closing a tab whose save fails asks to save elsewhere, as Sublime Text does', async () => {
   const ws = createWorkspace();
   const file = ws.write('locked.md', '# Locked\n');
-  chmodSync(file, 0o444);
   chmodSync(ws.docs, 0o555);
   const { app, page } = await launchApp(ws, [file]);
   await editor(page).click();
@@ -128,27 +127,48 @@ test('F-0003: closing a tab whose save fails keeps it open unless you discard', 
 
   const answer = async (response: number): Promise<void> => {
     await app.evaluate(({ dialog }, r) => {
-      const g = dialog as unknown as { asked: number };
-      g.asked = 0;
-      dialog.showMessageBox = (async () => {
-        g.asked += 1;
+      const g = dialog as unknown as { asked: string[] };
+      g.asked = [];
+      dialog.showMessageBox = (async (...args: unknown[]) => {
+        g.asked.push((args.at(-1) as { message: string }).message);
         return { response: r, checkboxChecked: false };
       }) as never;
     }, response);
   };
-  const asked = (): Promise<number> =>
-    app.evaluate(({ dialog }) => (dialog as unknown as { asked: number }).asked);
+  const asked = (): Promise<string[]> =>
+    app.evaluate(({ dialog }) => (dialog as unknown as { asked: string[] }).asked);
 
-  await answer(0);
+  await answer(2);
   await menu(app, 'close-tab');
-  await expect.poll(asked).toBe(1);
-  await expect(editor(page)).toContainText('Unsaved');
+  await expect.poll(asked).toEqual(['Save changes to locked.md before closing?']);
   await expect(page.locator('#tab-bar .tab-label')).toHaveText(['locked.md']);
 
   await answer(1);
   await menu(app, 'close-tab');
-  await expect.poll(asked).toBe(1);
   await expect(page.locator('#tab-bar .tab-label')).toHaveText(['Untitled']);
   chmodSync(ws.docs, 0o755);
+  expect(ws.read('locked.md')).toBe('# Locked\n');
+  await closeApp(app);
+});
+
+test('quitting keeps edits that could not be saved and restores them, like hot exit', async () => {
+  const ws = createWorkspace();
+  const file = ws.write('locked.md', '# Locked\n');
+  chmodSync(ws.docs, 0o555);
+  let { app, page } = await launchApp(ws, [file]);
+  await editor(page).click();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.type(' kept');
+  await expect(page.locator('#tab-bar .tab.pending')).toHaveCount(1);
+  await closeApp(app);
+
+  ({ app, page } = await launchApp(ws));
+  await expect(editor(page).locator('h1')).toHaveText('Locked kept');
+  // The folder becomes writable, so the retried autosave writes the edits.
+  chmodSync(ws.docs, 0o755);
+  await editor(page).click();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.type('!');
+  await expect.poll(() => ws.read('locked.md')).toBe('# Locked kept!\n');
   await closeApp(app);
 });

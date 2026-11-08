@@ -17,6 +17,7 @@ import { gfm } from '@milkdown/kit/preset/gfm';
 import { Plugin, type EditorState } from '@milkdown/kit/prose/state';
 import type { EditorView } from '@milkdown/kit/prose/view';
 import { $prose, getMarkdown } from '@milkdown/kit/utils';
+import { multiCursor } from './multiCursor';
 import { searchPlugin } from './search';
 import { taskCheckbox } from './taskList';
 
@@ -72,6 +73,8 @@ export async function createEditor(options: CreateEditorOptions): Promise<Markdo
         ctx.update(remarkStringifyOptionsCtx, (prev) => ({ ...prev, ...options.stringifyOptions }));
       }
     })
+    // Multiple cursors come first, so their keys run before the presets' keymaps.
+    .use(multiCursor)
     .use(commonmark)
     .use(gfm)
     .use(history)

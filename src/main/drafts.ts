@@ -9,6 +9,9 @@ export const ASSETS_DIR = 'assets';
 
 /** Stores untitled documents in per-draft folders under the app's data folder. */
 export class DraftStore {
+  /** Drafts created by this process; a save with an older tab list can't know them. */
+  private readonly created = new Set<string>();
+
   constructor(private readonly root: string) {}
 
   /** Gets the folder that holds a draft's Markdown file and assets. */
@@ -28,6 +31,7 @@ export class DraftStore {
 
   async create(): Promise<DraftSnapshot> {
     const id = randomUUID();
+    this.created.add(id);
     await mkdir(this.folder(id), { recursive: true });
     await writeFileAtomic(this.pathOf(id), '');
     return { id, path: this.pathOf(id), text: '' };
@@ -38,6 +42,7 @@ export class DraftStore {
   }
 
   async delete(id: string): Promise<void> {
+    this.created.delete(id);
     await rm(this.folder(id), { recursive: true, force: true });
   }
 
@@ -70,7 +75,7 @@ export class DraftStore {
   async pruneEmpty(keep: ReadonlySet<string>): Promise<void> {
     const ids = await readdir(this.root).catch(() => [] as string[]);
     for (const id of ids) {
-      if (keep.has(id) || extname(id) !== '') continue;
+      if (keep.has(id) || this.created.has(id) || extname(id) !== '') continue;
       const text = await readText(join(this.root, id, DRAFT_FILE)).catch(() => '');
       if (text.trim() === '') await rm(join(this.root, id), { recursive: true, force: true });
     }
