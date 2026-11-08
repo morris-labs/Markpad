@@ -3,6 +3,7 @@ import { readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Session, SessionTab } from '@shared/api';
 import { writeFileAtomic } from './fileStore';
+import { SerialQueue } from './serialQueue';
 
 /**
  * Keeps edits that couldn't be saved, so they survive a restart.
@@ -11,10 +12,17 @@ import { writeFileAtomic } from './fileStore';
  * and the text itself goes in its own file in the backups folder.
  */
 export class BackupStore {
+  private readonly queue = new SerialQueue();
+
   constructor(private readonly root: string) {}
 
   /** Writes each tab's unsaved text to a backup file and deletes backups no tab uses. */
-  async store(session: Session): Promise<Session> {
+  store(session: Session): Promise<Session> {
+    // Overlapping stores would prune each other's backup and temporary files.
+    return this.queue.run(() => this.storeNow(session));
+  }
+
+  private async storeNow(session: Session): Promise<Session> {
     const tabs: SessionTab[] = [];
     for (const tab of session.tabs) {
       const { unsavedText, ...rest } = tab;

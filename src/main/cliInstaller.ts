@@ -66,7 +66,8 @@ async function editWindowsUserPath(folder: string, add: boolean): Promise<void> 
   const read = await run('powershell.exe', [
     '-NoProfile',
     '-Command',
-    "[Environment]::GetEnvironmentVariable('Path', 'User')",
+    // Read the raw value so %VAR% entries stay unexpanded.
+    "(Get-Item 'HKCU:\\Environment').GetValue('Path', '', 'DoNotExpandEnvironmentNames')",
   ]);
   const next = editPathList(read.stdout.trim(), folder, add, ';', true);
   // The value travels in an environment variable, so no quoting can break the command.
@@ -75,7 +76,8 @@ async function editWindowsUserPath(folder: string, add: boolean): Promise<void> 
     [
       '-NoProfile',
       '-Command',
-      "[Environment]::SetEnvironmentVariable('Path', $env:MARKPAD_PATH, 'User')",
+      // ExpandString keeps the value type; the null write broadcasts the change.
+      "Set-ItemProperty -Path 'HKCU:\\Environment' -Name Path -Value $env:MARKPAD_PATH -Type ExpandString; [Environment]::SetEnvironmentVariable('MARKPAD_REFRESH', $null, 'User')",
     ],
     { env: { ...process.env, MARKPAD_PATH: next } },
   );
