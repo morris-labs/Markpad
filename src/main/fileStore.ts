@@ -1,15 +1,26 @@
 import { randomUUID } from 'node:crypto';
 import { watch, type FSWatcher } from 'node:fs';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join } from 'node:path';
 
-/** Writes a file through a temporary file and a rename, so readers never see a partial file. */
+/**
+ * Writes a file through a temporary file and a rename, so readers never see a partial file.
+ *
+ * A symlink is followed, so the save replaces the file it points to and the
+ * link survives. The replaced file's permissions carry over.
+ */
 export async function writeFileAtomic(path: string, data: string | Uint8Array): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  const temp = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
+  const target = await realpath(path).catch(() => path);
+  const mode = await stat(target).then(
+    (info) => info.mode & 0o7777,
+    () => undefined,
+  );
+  const temp = join(dirname(target), `.${basename(target)}.${randomUUID()}.tmp`);
   try {
     await writeFile(temp, data);
-    await rename(temp, path);
+    if (mode !== undefined) await chmod(temp, mode);
+    await rename(temp, target);
   } catch (error) {
     await rm(temp, { force: true });
     throw error;
