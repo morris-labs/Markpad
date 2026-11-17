@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.5.2 (2026-11-17)
+
+- Saving a file opened through a symlink writes to the file the link
+  points to and keeps the link. Saves also keep the file's permissions.
+
 ## 2.5.1 (2026-11-08)
 
 - Multiple cursors, as in Sublime Text, in the styled, source, and code
